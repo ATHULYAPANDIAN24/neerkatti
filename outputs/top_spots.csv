@@ -1,0 +1,11 @@
+rank,type,area_ha,lat,lon,google_maps
+1,wet->buildings,10.92,12.96237,80.22958,"https://www.google.com/maps/@12.96237,80.22958,400m/data=!3m1!1e3"
+2,wet->buildings,3.79,12.88096,80.20827,"https://www.google.com/maps/@12.88096,80.20827,400m/data=!3m1!1e3"
+3,wet->buildings,1.01,12.90296,80.20947,"https://www.google.com/maps/@12.90296,80.20947,400m/data=!3m1!1e3"
+4,wet->buildings,0.96,12.94678,80.19085,"https://www.google.com/maps/@12.94678,80.19085,400m/data=!3m1!1e3"
+5,wet->buildings,0.81,12.88213,80.21025,"https://www.google.com/maps/@12.88213,80.21025,400m/data=!3m1!1e3"
+6,wet->buildings,0.75,12.96723,80.2275,"https://www.google.com/maps/@12.96723,80.2275,400m/data=!3m1!1e3"
+7,wet->buildings,0.71,12.9422,80.24429,"https://www.google.com/maps/@12.9422,80.24429,400m/data=!3m1!1e3"
+8,wet->buildings,0.7,12.9088,80.22116,"https://www.google.com/maps/@12.9088,80.22116,400m/data=!3m1!1e3"
+9,wet->buildings,0.68,12.95706,80.23088,"https://www.google.com/maps/@12.95706,80.23088,400m/data=!3m1!1e3"
+10,wet->buildings,0.61,12.88364,80.23413,"https://www.google.com/maps/@12.88364,80.23413,400m/data=!3m1!1e3"
