@@ -174,8 +174,8 @@
       '<div class="pop-ha">' + ha(p.area_ha) + ' ha <span>≈ ' + acres(p.area_ha) + ' acres</span></div>' +
       '<p>Water or marsh in 2018 → buildings in 2025 and 2026.</p>' +
       '<div class="pills"><span class="pill check">Possible change, needs a ground check</span>' +
-      (p.site ? '<span class="pill seen">Site ' + p.site + ' · checked by eye</span>' : '') + '</div>' +
-      (p.site ? '' : '<p>Not yet checked by eye.</p>') +
+      (p.site ? '<span class="pill site">Site ' + p.site + '</span>' : '') + '</div>' +
+      '<p>' + (p.finding ? '<b>Checked by eye:</b> ' + esc(p.finding) + '.' : 'Not yet checked by eye.') + '</p>' +
       '<a href="' + gmaps(p) + '" target="_blank" rel="noopener">Open in Google Maps (satellite) →</a>' +
       '</div>';
   }
@@ -311,9 +311,8 @@
       '<span class="rank">' + p.rank + '</span>' +
       '<span class="name">' + placeOf(p) + '</span>' +
       '<span class="ha">' + ha(p.area_ha) + ' ha</span>' +
-      '<span class="meta">' +
-      (p.site ? '<span class="pill site">Site ' + p.site + '</span><span class="pill seen">Checked by eye</span>'
-        : '<span>Not yet checked by eye</span>') +
+      '<span class="meta">' + (p.site ? '<span class="pill site">Site ' + p.site + '</span>' : '') +
+      '<span>' + (p.finding ? esc(p.finding) : 'Not yet checked by eye') + '</span>' +
       '<span class="pill check">Possible change, needs a ground check</span></span>' +
       '</button>';
     li.firstChild.addEventListener('click', function () { showMap(); select(p.rank, { fly: true }); });

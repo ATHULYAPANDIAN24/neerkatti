@@ -20,7 +20,9 @@ DEXATHON 2026 · Track: Sustainability Development · Team: Sternritters
   - **A · Perungudi:** about 11 ha of marsh is now cleared and built-up.
   - **B · Nookampalayam:** about 4.6 ha of 2018 water is now under a housing block.
   - **C · Perumbakkam:** a strip of marsh edge about 1 ha in size has been filled.
-  - **D · Sunnambu Kulathur, E · Panaiyur:** smaller changes, not yet checked.
+  - **D · Sunnambu Kulathur, E · Panaiyur:** smaller changes.
+- **Top 10 checked by eye (20 Oct 2026):** on before/after close-ups and current high-resolution satellite imagery, **9 of the top 10 patches show real building, paving or filling; 1 is unclear.** Details in [`outputs/topten_check.md`](outputs/topten_check.md), close-ups in `outputs/topten/`.
+- **How far to trust the AI labels:** Dynamic World's own validation gives 86.7% user's accuracy for built-up land but only 36.8% producer's accuracy for marsh (Brown et al. 2022, Tables 7–8). It misses a lot of marsh, so 28.1 ha is a cautious count.
 - **Status of every alert:** "possible change, needs a ground check". Nothing here names or accuses any owner.
 
 ## Round 2 web app (`docs/app/`)
@@ -30,7 +32,7 @@ A Leaflet map of the Pallikaranai watershed. It is a static site: no server, no 
 - **2018 / Compare / 2026.** In Compare mode, drag the divider across the map: 2018 on the left, 2026 on the right. It also works with the arrow keys.
 - **Satellite or AI labels.** The Sentinel-2 photo (Feb–May median), or the Dynamic World label of every 10 m square (water, marsh, trees, buildings…).
 - **All 36 flagged patches** as red polygons (28.1 ha in total). Click one for its area, its status and a Google Maps satellite link.
-- **Top 10 list.** Click a row to fly to that patch. The link updates to `#patch-N`, so a view can be shared. Sites A, B and C are marked as checked by eye.
+- **Top 10 list.** Click a row to fly to that patch. The link updates to `#patch-N`, so a view can be shared. Each row says what the satellite images show (sites A, B and C are marked).
 - **Every patch is labelled "possible change, needs a ground check".** No owners are named; place names are suburb-level only.
 - **Works on a phone** (checked at 375 px) and in light and dark mode.
 - **Open data.** [`docs/app/data/patches.geojson`](docs/app/data/patches.geojson) has every patch with its area, rank and status.
@@ -71,6 +73,7 @@ python -m venv .venv
 .venv/Scripts/python analysis/make_slide.py      # slide3_neerkatti.png
 .venv/Scripts/python analysis/demo_assets.py     # docs/img/ (images for the project page)
 .venv/Scripts/python analysis/app_assets.py      # docs/app/data/ (images + patches for the live map)
+.venv/Scripts/python analysis/topten_closeups.py # outputs/topten/ (2018 | 2026 close-up of each top-10 patch)
 ```
 
 **Option C, the web app.** Serve the `docs/` folder and open the map:

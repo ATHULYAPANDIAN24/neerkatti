@@ -45,11 +45,22 @@ LABELS = [("water", "419bdf"), ("trees", "397d49"), ("grass", "88b053"),
           ("marsh", "7a87c6"), ("crops", "e49635"), ("shrub & scrub", "dfc35a"),
           ("buildings", "8f939c"), ("bare soil", "cdb88f"), ("snow & ice", "b39fe1")]
 
-# Patches checked by eye on the before/after images (README, sites A–C).
-# Keyed by rank; the script stops if a patch has moved, so a re-run on
-# changed data can't silently attach the wrong site letter.
-CHECKED = {1: ("A", 80.22958, 12.96237), 2: ("B", 80.20827, 12.88096),
-           3: ("C", 80.20947, 12.90296), 5: ("B", 80.21025, 12.88213)}
+# The top 10, checked by eye on the before/after close-ups and on high-resolution
+# satellite imagery (outputs/topten_check.md). Sites A–C are the README's.
+# Keyed by rank: (site, lon, lat, what the images show). The script stops if a
+# patch has moved, so a re-run on changed data can't attach the wrong finding.
+CHECKED = {
+    1: ("A", 80.22958, 12.96237, "Marsh cleared and built up"),
+    2: ("B", 80.20827, 12.88096, "2018 water now under a housing block"),
+    3: ("C", 80.20947, 12.90296, "Marsh edge filled"),
+    4: (None, 80.19085, 12.94678, "High-rise construction at the lake edge"),
+    5: ("B", 80.21025, 12.88213, "Part of the site B housing"),
+    6: (None, 80.22750, 12.96723, "Shoreline filled with earth, next to housing"),
+    7: (None, 80.24429, 12.94220, "Lake edge filled with earth and debris"),
+    8: (None, 80.22116, 12.90880, "2018 pond or marsh now paved over"),
+    9: (None, 80.23088, 12.95706, "Change visible, cause unclear"),
+    10: (None, 80.23413, 12.88364, "New road and paths along the pond edge"),
+}
 # Place names already used in Round 1 (README, deck, demo page). Patch 4 sits on
 # the Sunnambu Kolathur / Echangadu border; OSM now puts it in Echangadu, but
 # we keep the Round 1 name so the two don't disagree. Other patches get their
@@ -182,12 +193,13 @@ for rank, f in enumerate(raw, 1):
         "place": NAMES.get(rank) or place_name(lon, lat, cache) if rank <= 10 else None,
         "site": None,
         "checked_by_eye": False,
+        "finding": None,
     }
     if rank in CHECKED:
-        site, slon, slat = CHECKED[rank]
+        site, slon, slat, finding = CHECKED[rank]
         gap = metres(lon, lat, slon, slat)
-        assert gap < 60, f"patch {rank} moved {gap:.0f} m from site {site}; update CHECKED"
-        props["site"], props["checked_by_eye"] = site, True
+        assert gap < 60, f"patch {rank} moved {gap:.0f} m from where it was checked; update CHECKED"
+        props.update(site=site, checked_by_eye=True, finding=finding)
     features.append({"type": "Feature", "properties": props,
                      "geometry": {"type": f["geometry"]["type"],
                                   "coordinates": rounded(f["geometry"]["coordinates"])}})
