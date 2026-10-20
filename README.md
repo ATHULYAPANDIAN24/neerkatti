@@ -4,7 +4,9 @@ An AI water-keeper for Chennai's wetlands. It catches illegal filling of lakes a
 
 DEXATHON 2026 · Track: Sustainability Development · Team: Sternritters
 
-**Live demo:** <https://athulyapandian24.github.io/neerkatti/>. Drag the 2018 ↔ 2026 slider and see the flagged sites.
+**Live map (Round 2 prototype):** <https://athulyapandian24.github.io/neerkatti/app/>. Compare 2018 and 2026, switch to the AI labels, and tap any of the top 10 patches to zoom to it.
+
+**Project page:** <https://athulyapandian24.github.io/neerkatti/>. A 2018 ↔ 2026 slider and the checked sites.
 
 ![Slide 3](outputs/slide3_neerkatti.png)
 
@@ -20,6 +22,29 @@ DEXATHON 2026 · Track: Sustainability Development · Team: Sternritters
   - **C · Perumbakkam:** a strip of marsh edge about 1 ha in size has been filled.
   - **D · Sunnambu Kulathur, E · Panaiyur:** smaller changes, not yet checked.
 - **Status of every alert:** "possible change, needs a ground check". Nothing here names or accuses any owner.
+
+## Round 2 web app (`docs/app/`)
+
+A Leaflet map of the Pallikaranai watershed. It is a static site: no server, no API key, no Earth Engine login.
+
+- **2018 / Compare / 2026.** In Compare mode, drag the divider across the map: 2018 on the left, 2026 on the right. It also works with the arrow keys.
+- **Satellite or AI labels.** The Sentinel-2 photo (Feb–May median), or the Dynamic World label of every 10 m square (water, marsh, trees, buildings…).
+- **All 36 flagged patches** as red polygons (28.1 ha in total). Click one for its area, its status and a Google Maps satellite link.
+- **Top 10 list.** Click a row to fly to that patch. The link updates to `#patch-N`, so a view can be shared. Sites A, B and C are marked as checked by eye.
+- **Every patch is labelled "possible change, needs a ground check".** No owners are named; place names are suburb-level only.
+- **Works on a phone** (checked at 375 px) and in light and dark mode.
+- **Open data.** [`docs/app/data/patches.geojson`](docs/app/data/patches.geojson) has every patch with its area, rank and status.
+
+Earth Engine map-tile links expire after a few hours, so `analysis/app_assets.py` exports everything the app shows as static files:
+
+| File | What it is |
+|---|---|
+| `photo_2018.jpg`, `photo_2026.jpg` | Sentinel-2 true colour, Feb–May median (13 and 19 clear images), ≈10 m per pixel |
+| `labels_2018.png`, `labels_2026.png` | Dynamic World label for each square (most common in Feb–May). Dynamic World's colours, except buildings (grey) and bare soil (sand), so red only ever means a flagged patch |
+| `patches.geojson` | The v1 change patches, from `reduceToVectors`, ranked by area. Polygon areas add up to 28.2 ha; the 28.1 ha headline is the pixel count |
+| `neerkatti_data.js` | The same patches plus the numbers and map labels, loaded by the page |
+
+The alerts, the citizen photo check and the complaint PDF are built during the 24-hour final, as the rules require.
 
 ## How it works
 
@@ -44,8 +69,17 @@ python -m venv .venv
 .venv/Scripts/python analysis/change_map.py      # stats.json, top_spots.csv, maps
 .venv/Scripts/python analysis/spot_closeups.py   # closeups.png (before/after per spot)
 .venv/Scripts/python analysis/make_slide.py      # slide3_neerkatti.png
-.venv/Scripts/python analysis/demo_assets.py     # docs/img/ (images for the live demo page)
+.venv/Scripts/python analysis/demo_assets.py     # docs/img/ (images for the project page)
+.venv/Scripts/python analysis/app_assets.py      # docs/app/data/ (images + patches for the live map)
 ```
+
+**Option C, the web app.** Serve the `docs/` folder and open the map:
+
+```bash
+.venv/Scripts/python -m http.server 8765 --directory docs
+```
+
+Then go to <http://localhost:8765/app/>. Opening `docs/app/index.html` straight from the file system also works.
 
 The scripts use the Earth Engine Cloud project `dexathon-athulya` (non-commercial, Community tier).
 
@@ -53,7 +87,7 @@ The scripts use the Earth Engine Cloud project `dexathon-athulya` (non-commercia
 
 - [x] v0/v1: change map + top spots + slide image
 - [x] Live demo page: 2018 ↔ 2026 slider + checked sites + top-10 list (`docs/`, GitHub Pages)
-- [ ] Round 2 web app: interactive map + year slider + top-10 changed spots (deploy by 29 Oct)
+- [x] Round 2 web app: Leaflet map + 2018 / 2026 compare + AI labels + all patches + top-10 list (`docs/app/`)
 - [ ] Final (24 h): new-change alerts, citizen photo check, complaint PDF, monsoon radar mode
 
 ## Sources
@@ -61,3 +95,4 @@ The scripts use the Earth Engine Cloud project `dexathon-athulya` (non-commercia
 - Dynamic World V1: `GOOGLE/DYNAMICWORLD/V1` (Google & World Resources Institute)
 - Sentinel-2: `COPERNICUS/S2_HARMONIZED` (ESA Copernicus)
 - Place names: OpenStreetMap Nominatim
+- Map background: © OpenStreetMap contributors (tile.openstreetmap.org); map library: Leaflet 1.9.4
