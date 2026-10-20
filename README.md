@@ -2,7 +2,7 @@
 
 An AI water-keeper for Chennai's wetlands. It catches illegal filling of lakes and marshes from free satellite data, confirms it with photos from citizens, and turns it into a ready-to-send complaint.
 
-DEXATHON 2026 · Track: Sustainability Development · Team: _(your team name)_
+DEXATHON 2026 · Track: Sustainability Development · Team: Sternritters
 
 ![Slide 3](outputs/slide3_neerkatti.png)
 
