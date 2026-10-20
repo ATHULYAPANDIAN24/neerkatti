@@ -1,0 +1,333 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>NEERKATTI · Chennai's AI water-keeper</title>
+<meta name="description" content="Satellite change detection for the Pallikaranai wetlands, Chennai: 28 hectares of 2018 water and marsh are now built over. DEXATHON 2026, Team Sternritters.">
+<meta property="og:title" content="NEERKATTI · Chennai's AI water-keeper">
+<meta property="og:description" content="28 hectares of Pallikaranai's 2018 water and marsh are now built over. Drag the slider to see 2018 vs 2026.">
+<meta property="og:image" content="https://athulyapandian24.github.io/neerkatti/img/og.jpg">
+<meta property="og:url" content="https://athulyapandian24.github.io/neerkatti/">
+<meta property="og:type" content="website">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Ccircle cx='32' cy='32' r='30' fill='%23253C6D'/%3E%3Cpath d='M32 12C24 24 19 31 19 38a13 13 0 0 0 26 0c0-7-5-14-13-26z' fill='%23F2842F'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root{
+  --navy:#253C6D; --orange:#F2842F; --red:#ff1a1a; --yellow:#FBAE40;
+  --bg:#F6F8FB; --card:#FFFFFF; --ink:#1B2333; --muted:#5B6578; --line:#E2E6EE; --tint:#EAF0F8;
+  --shadow:0 1px 2px rgba(20,30,55,.06),0 8px 24px rgba(20,30,55,.06);
+}
+@media (prefers-color-scheme:dark){
+  :root{--bg:#0E1422;--card:#161F31;--ink:#E8ECF4;--muted:#9AA6BC;--line:#26324A;--tint:#1C2740;
+    --shadow:0 1px 2px rgba(0,0,0,.3),0 8px 24px rgba(0,0,0,.25)}
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.6 Inter,"Segoe UI",system-ui,-apple-system,sans-serif;-webkit-font-smoothing:antialiased}
+a{color:inherit}
+.wrap{max-width:1120px;margin:0 auto;padding:0 20px}
+header.top{background:var(--navy);color:#fff}
+header.top .wrap{display:flex;gap:12px;align-items:center;justify-content:space-between;min-height:56px;font-size:14px}
+.brand{font-weight:800;letter-spacing:.08em}
+.brand span{color:var(--orange)}
+.top nav a{color:#C9D3E6;text-decoration:none;margin-left:18px;font-weight:500}
+.top nav a:hover{color:#fff}
+.hero{background:linear-gradient(180deg,var(--navy) 0,var(--navy) 55%,var(--bg) 55%);color:#fff;padding:36px 0 8px}
+.hero-grid{display:grid;grid-template-columns:1.05fr 1fr;gap:40px;align-items:start}
+.kicker{display:inline-block;font-size:12px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--yellow);margin-bottom:12px}
+h1{font-size:clamp(40px,7vw,68px);line-height:1;margin:0 0 12px;letter-spacing:.02em;font-weight:800}
+.sub{font-size:clamp(18px,2.4vw,22px);color:#DCE4F2;margin:0 0 18px;font-weight:500}
+.lead{color:#C9D3E6;max-width:34em;margin:0 0 22px}
+.lead b{color:#fff}
+.btns{display:flex;flex-wrap:wrap;gap:10px;margin-bottom:26px}
+.btn{display:inline-flex;align-items:center;gap:8px;padding:11px 18px;border-radius:999px;font-weight:600;font-size:15px;text-decoration:none;border:1.5px solid transparent}
+.btn.primary{background:var(--orange);color:#fff}
+.btn.ghost{border-color:#5E77A8;color:#fff}
+.btn:hover{filter:brightness(1.08)}
+.stats{display:grid;grid-template-columns:repeat(2,1fr);gap:12px;margin-top:4px}
+.stat{background:var(--card);color:var(--ink);border-radius:16px;padding:16px 18px;box-shadow:var(--shadow)}
+.stat b{display:block;font-size:30px;line-height:1.1;color:var(--orange);font-weight:800}
+.stat span{font-size:14px;color:var(--muted)}
+/* compare slider */
+.compare{position:relative;overflow:hidden;border-radius:18px;box-shadow:var(--shadow);background:#2a3242;touch-action:pan-y;user-select:none;-webkit-user-select:none;cursor:ew-resize;--pos:50%}
+.compare img{display:block;width:100%;height:auto;pointer-events:none}
+.compare .after{position:relative}
+.compare .after img + img{position:absolute;inset:0}
+.compare .before{position:absolute;inset:0;clip-path:inset(0 calc(100% - var(--pos)) 0 0)}
+.compare .handle{position:absolute;top:0;bottom:0;left:var(--pos);width:3px;margin-left:-1.5px;background:#fff;box-shadow:0 0 0 1px rgba(0,0,0,.25)}
+.compare .knob{position:absolute;top:50%;left:var(--pos);transform:translate(-50%,-50%);width:44px;height:44px;border-radius:50%;background:#fff;color:var(--navy);display:grid;place-items:center;box-shadow:0 2px 10px rgba(0,0,0,.35);font-weight:800;font-size:15px}
+.compare .knob:focus-visible{outline:3px solid var(--orange);outline-offset:3px}
+.tag{position:absolute;top:12px;padding:4px 12px;border-radius:999px;font-size:13px;font-weight:700;color:#fff;pointer-events:none}
+.tag.l{left:12px;background:var(--navy)}
+.tag.r{right:12px;background:var(--orange)}
+.map-card{background:var(--card);border-radius:22px;padding:14px;box-shadow:var(--shadow)}
+.map-tools{display:flex;flex-wrap:wrap;gap:10px 18px;align-items:center;justify-content:space-between;padding:12px 4px 2px;font-size:14px;color:var(--muted)}
+.legend{display:flex;flex-wrap:wrap;gap:6px 16px}
+.legend i{display:inline-block;width:12px;height:12px;border-radius:3px;margin-right:6px;vertical-align:-1px}
+.switch{display:inline-flex;align-items:center;gap:8px;cursor:pointer;font-weight:600;color:var(--ink)}
+.switch input{width:18px;height:18px;accent-color:var(--orange)}
+.hint{font-size:13px;color:var(--muted);padding:2px 4px 0}
+section{padding:56px 0 8px}
+h2{font-size:clamp(26px,3.4vw,34px);margin:0 0 8px;letter-spacing:-.01em;line-height:1.2}
+.label{font-size:12px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--orange);margin-bottom:8px}
+.intro{color:var(--muted);max-width:46em;margin:0 0 26px}
+.sites{display:grid;grid-template-columns:repeat(3,1fr);gap:20px}
+.site{background:var(--card);border-radius:20px;padding:12px;box-shadow:var(--shadow);display:flex;flex-direction:column}
+.site .compare{border-radius:14px}
+.site h3{margin:14px 6px 2px;font-size:19px}
+.site .ha{margin:0 6px;color:var(--orange);font-weight:800;font-size:22px}
+.site p{margin:6px 6px 10px;color:var(--muted);font-size:15px}
+.site .foot{margin-top:auto;display:flex;flex-wrap:wrap;gap:8px;align-items:center;justify-content:space-between;padding:4px 6px 4px}
+.pill{font-size:12px;font-weight:700;padding:4px 10px;border-radius:999px;background:var(--tint);color:var(--navy)}
+@media (prefers-color-scheme:dark){.pill{color:#C9D3E6}}
+.maplink{font-size:14px;font-weight:600;color:var(--orange);text-decoration:none}
+.maplink:hover{text-decoration:underline}
+table{width:100%;border-collapse:collapse;background:var(--card);border-radius:16px;overflow:hidden;box-shadow:var(--shadow);font-size:15px}
+th,td{padding:11px 14px;text-align:left;border-bottom:1px solid var(--line)}
+th{font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);background:var(--tint)}
+td.num{font-variant-numeric:tabular-nums;font-weight:700}
+tr:last-child td{border-bottom:0}
+.table-wrap{overflow-x:auto;border-radius:16px}
+.steps{display:grid;grid-template-columns:repeat(5,1fr);gap:14px;counter-reset:s}
+.step{background:var(--card);border-radius:18px;padding:18px 16px;box-shadow:var(--shadow);position:relative;display:flex;flex-direction:column;align-items:flex-start}
+.step::before{counter-increment:s;content:counter(s);display:grid;place-items:center;width:34px;height:34px;border-radius:50%;background:var(--navy);color:#fff;font-weight:800;margin-bottom:12px}
+.step.next::before{background:var(--orange)}
+.step h3{margin:0 0 4px;font-size:17px}
+.step p{margin:0 0 14px;color:var(--muted);font-size:14px}
+.st{display:inline-block;margin-top:auto;font-size:11px;font-weight:800;letter-spacing:.1em;padding:3px 9px;border-radius:999px}
+.st.now{background:#E3F4EA;color:#17733D}
+.st.final{background:#FDEBDD;color:#B4561A}
+@media (prefers-color-scheme:dark){.st.now{background:#163A27;color:#7FD6A2}.st.final{background:#3E2615;color:#F6B285}}
+.fix{display:grid;grid-template-columns:1fr 1fr 1.1fr;gap:20px;align-items:start}
+.fix figure{margin:0;background:var(--card);border-radius:18px;padding:10px;box-shadow:var(--shadow)}
+.fix img{width:100%;height:auto;border-radius:12px;display:block}
+.fix figcaption{font-size:14px;color:var(--muted);padding:8px 4px 2px}
+.big{font-size:44px;font-weight:800;color:var(--orange);line-height:1.1;margin:0 0 8px}
+.note{background:var(--card);border-left:5px solid var(--orange);border-radius:12px;padding:18px 20px;box-shadow:var(--shadow)}
+.note p{margin:0}
+footer{margin-top:64px;background:var(--navy);color:#C9D3E6;padding:34px 0;font-size:14px}
+footer a{color:#fff}
+footer .cols{display:grid;grid-template-columns:1.2fr 1fr;gap:28px}
+footer h4{color:#fff;margin:0 0 8px;font-size:15px}
+footer p{margin:0 0 6px}
+@media (max-width:900px){
+  .hero{background:var(--navy);padding-bottom:28px}
+  .hero-grid{grid-template-columns:1fr}
+  .sites{grid-template-columns:1fr}
+  .steps{grid-template-columns:1fr 1fr}
+  .fix{grid-template-columns:1fr 1fr}
+  .fix .fix-text{grid-column:1/-1}
+  footer .cols{grid-template-columns:1fr}
+  .top nav{display:none}
+}
+@media (max-width:520px){
+  .wrap{padding:0 16px}
+  .steps{grid-template-columns:1fr}
+  .fix{grid-template-columns:1fr}
+  .stat b{font-size:26px}
+}
+</style>
+</head>
+<body>
+<header class="top">
+  <div class="wrap">
+    <div class="brand">NEER<span>KATTI</span></div>
+    <nav aria-label="Sections">
+      <a href="#map">Map</a><a href="#sites">Sites</a><a href="#how">How it works</a><a href="https://github.com/ATHULYAPANDIAN24/neerkatti">GitHub</a>
+    </nav>
+  </div>
+</header>
+
+<div class="hero">
+  <div class="wrap hero-grid">
+    <div>
+      <span class="kicker">DEXATHON 2026 · Team Sternritters · Sustainability</span>
+      <h1>NEERKATTI</h1>
+      <p class="sub">An AI water-keeper for Chennai's wetlands</p>
+      <p class="lead">We compared satellite images of the Pallikaranai watershed from the 2018 and 2026 dry seasons. An AI model labels every 10&nbsp;m square of land. Our rule flags water and marsh that turned into buildings. <b>28&nbsp;hectares are now built over.</b></p>
+      <div class="btns">
+        <a class="btn primary" href="#map">See 2018 vs 2026</a>
+        <a class="btn ghost" href="https://github.com/ATHULYAPANDIAN24/neerkatti">Code on GitHub</a>
+      </div>
+      <div class="stats">
+        <div class="stat"><b>28.1&nbsp;ha</b><span>of 2018 water and marsh now built over (≈69 acres)</span></div>
+        <div class="stat"><b>1,628&nbsp;ha</b><span>of water and marsh checked in the study area</span></div>
+        <div class="stat"><b>3 sites</b><span>checked by eye on before/after images</span></div>
+        <div class="stat"><b>₹0</b><span>data cost: free Sentinel-2 images</span></div>
+      </div>
+    </div>
+
+    <div class="map-card" id="map">
+      <div class="compare" data-compare aria-label="2018 versus 2026 satellite comparison">
+        <div class="after">
+          <img src="img/area_2026.jpg" alt="Pallikaranai watershed, 2026 satellite image" width="1039" height="1500">
+          <img src="img/area_2026_loss.jpg" alt="Pallikaranai watershed, 2026, with built-over water and marsh in red" width="1039" height="1500" data-loss>
+        </div>
+        <div class="before"><img src="img/area_2018.jpg" alt="Pallikaranai watershed, 2018 satellite image" width="1039" height="1500"></div>
+        <span class="tag l">2018</span><span class="tag r">2026</span>
+        <div class="handle"></div>
+        <div class="knob" role="slider" tabindex="0" aria-label="Move to compare 2018 and 2026" aria-valuemin="0" aria-valuemax="100" aria-valuenow="50">⇔</div>
+      </div>
+      <div class="map-tools">
+        <div class="legend">
+          <span><i style="background:var(--red)"></i>water/marsh in 2018 → buildings in 2025 and 2026</span>
+          <span><i style="background:#ffff00;border-radius:50%"></i>Sathyabama campus</span>
+        </div>
+        <label class="switch"><input type="checkbox" checked data-toggle> Show change</label>
+      </div>
+      <div class="hint">Drag across the image. Sentinel-2, Feb–May median of each year, 80.17–80.26°E, 12.86–12.99°N.</div>
+    </div>
+  </div>
+</div>
+
+<main class="wrap">
+  <section id="sites">
+    <div class="label">Checked by eye</div>
+    <h2>Where the marsh became buildings</h2>
+    <p class="intro">The three biggest flagged sites, each checked by eye on the before/after images. Every alert is a <b>possible change that needs a ground check</b>. We never name owners.</p>
+    <div class="sites">
+      <article class="site">
+        <div class="compare" data-compare aria-label="Site A, Perungudi, 2018 versus 2026">
+          <div class="after"><img src="img/site_a_2026.jpg" alt="Perungudi 2026 with lost marsh outlined in red" width="640" height="628" loading="lazy"></div>
+          <div class="before"><img src="img/site_a_2018.jpg" alt="Perungudi 2018" width="640" height="628" loading="lazy"></div>
+          <span class="tag l">2018</span><span class="tag r">2026</span>
+          <div class="handle"></div><div class="knob" role="slider" tabindex="0" aria-label="Compare 2018 and 2026" aria-valuemin="0" aria-valuemax="100" aria-valuenow="50">⇔</div>
+        </div>
+        <h3>A · Perungudi</h3>
+        <div class="ha">≈11 ha</div>
+        <p>Marsh on the north side of Pallikaranai, now cleared and built up.</p>
+        <div class="foot"><span class="pill">Needs a ground check</span><a class="maplink" href="https://www.google.com/maps/@12.96237,80.22958,600m/data=!3m1!1e3">Open in Google Maps →</a></div>
+      </article>
+      <article class="site">
+        <div class="compare" data-compare aria-label="Site B, Nookampalayam, 2018 versus 2026">
+          <div class="after"><img src="img/site_b_2026.jpg" alt="Nookampalayam 2026 with built-over water outlined in red" width="640" height="628" loading="lazy"></div>
+          <div class="before"><img src="img/site_b_2018.jpg" alt="Nookampalayam 2018" width="640" height="628" loading="lazy"></div>
+          <span class="tag l">2018</span><span class="tag r">2026</span>
+          <div class="handle"></div><div class="knob" role="slider" tabindex="0" aria-label="Compare 2018 and 2026" aria-valuemin="0" aria-valuemax="100" aria-valuenow="50">⇔</div>
+        </div>
+        <h3>B · Nookampalayam</h3>
+        <div class="ha">≈4.6 ha</div>
+        <p>A water body seen in 2018 is now under a housing block.</p>
+        <div class="foot"><span class="pill">Needs a ground check</span><a class="maplink" href="https://www.google.com/maps/@12.88096,80.20827,600m/data=!3m1!1e3">Open in Google Maps →</a></div>
+      </article>
+      <article class="site">
+        <div class="compare" data-compare aria-label="Site C, Perumbakkam, 2018 versus 2026">
+          <div class="after"><img src="img/site_c_2026.jpg" alt="Perumbakkam 2026 with filled marsh edge outlined in red" width="640" height="628" loading="lazy"></div>
+          <div class="before"><img src="img/site_c_2018.jpg" alt="Perumbakkam 2018" width="640" height="628" loading="lazy"></div>
+          <span class="tag l">2018</span><span class="tag r">2026</span>
+          <div class="handle"></div><div class="knob" role="slider" tabindex="0" aria-label="Compare 2018 and 2026" aria-valuemin="0" aria-valuemax="100" aria-valuenow="50">⇔</div>
+        </div>
+        <h3>C · Perumbakkam</h3>
+        <div class="ha">≈1 ha</div>
+        <p>A strip along the marsh edge has been filled.</p>
+        <div class="foot"><span class="pill">Needs a ground check</span><a class="maplink" href="https://www.google.com/maps/@12.90296,80.20947,600m/data=!3m1!1e3">Open in Google Maps →</a></div>
+      </article>
+    </div>
+  </section>
+
+  <section id="spots">
+    <div class="label">Full list</div>
+    <h2>Top 10 flagged patches</h2>
+    <p class="intro">Straight from the prototype's output (<a href="https://github.com/ATHULYAPANDIAN24/neerkatti/blob/main/outputs/top_spots.csv">top_spots.csv</a>). Patches 1, 2, 3 and 5 belong to the sites above. The rest are not yet checked by eye.</p>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>#</th><th>Area</th><th>Place</th><th>Location</th><th>Status</th></tr></thead>
+        <tbody>
+          <tr><td>1</td><td class="num">10.92 ha</td><td>Perungudi (A)</td><td><a class="maplink" href="https://www.google.com/maps/@12.96237,80.22958,400m/data=!3m1!1e3">12.9624, 80.2296</a></td><td>Checked by eye</td></tr>
+          <tr><td>2</td><td class="num">3.79 ha</td><td>Nookampalayam (B)</td><td><a class="maplink" href="https://www.google.com/maps/@12.88096,80.20827,400m/data=!3m1!1e3">12.8810, 80.2083</a></td><td>Checked by eye</td></tr>
+          <tr><td>3</td><td class="num">1.01 ha</td><td>Perumbakkam (C)</td><td><a class="maplink" href="https://www.google.com/maps/@12.90296,80.20947,400m/data=!3m1!1e3">12.9030, 80.2095</a></td><td>Checked by eye</td></tr>
+          <tr><td>4</td><td class="num">0.96 ha</td><td>Sunnambu Kulathur</td><td><a class="maplink" href="https://www.google.com/maps/@12.94678,80.19085,400m/data=!3m1!1e3">12.9468, 80.1909</a></td><td>Not yet checked</td></tr>
+          <tr><td>5</td><td class="num">0.81 ha</td><td>Nookampalayam (B)</td><td><a class="maplink" href="https://www.google.com/maps/@12.88213,80.21025,400m/data=!3m1!1e3">12.8821, 80.2103</a></td><td>Checked by eye</td></tr>
+          <tr><td>6</td><td class="num">0.75 ha</td><td>–</td><td><a class="maplink" href="https://www.google.com/maps/@12.96723,80.2275,400m/data=!3m1!1e3">12.9672, 80.2275</a></td><td>Not yet checked</td></tr>
+          <tr><td>7</td><td class="num">0.71 ha</td><td>–</td><td><a class="maplink" href="https://www.google.com/maps/@12.9422,80.24429,400m/data=!3m1!1e3">12.9422, 80.2443</a></td><td>Not yet checked</td></tr>
+          <tr><td>8</td><td class="num">0.70 ha</td><td>–</td><td><a class="maplink" href="https://www.google.com/maps/@12.9088,80.22116,400m/data=!3m1!1e3">12.9088, 80.2212</a></td><td>Not yet checked</td></tr>
+          <tr><td>9</td><td class="num">0.68 ha</td><td>–</td><td><a class="maplink" href="https://www.google.com/maps/@12.95706,80.23088,400m/data=!3m1!1e3">12.9571, 80.2309</a></td><td>Not yet checked</td></tr>
+          <tr><td>10</td><td class="num">0.61 ha</td><td>Panaiyur</td><td><a class="maplink" href="https://www.google.com/maps/@12.88364,80.23413,400m/data=!3m1!1e3">12.8836, 80.2341</a></td><td>Not yet checked</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section id="how">
+    <div class="label">Method</div>
+    <h2>How it works</h2>
+    <p class="intro">Steps 1–3 run today on real data. Steps 4–5 are what we build in the final round.</p>
+    <div class="steps">
+      <div class="step"><h3>Sentinel-2 satellite</h3><p>Free images of every lake, every 5 days.</p><span class="st now">WORKING NOW</span></div>
+      <div class="step"><h3>Dynamic World AI</h3><p>A deep-learning model labels each 10&nbsp;m square: water, marsh, built, soil.</p><span class="st now">WORKING NOW</span></div>
+      <div class="step"><h3>Change rule v1</h3><p>2018 water/marsh that is built in 2025 <i>and</i> 2026. Lake edges ignored.</p><span class="st now">WORKING NOW</span></div>
+      <div class="step next"><h3>Alert + citizen photo</h3><p>A vision model tags the photo: dumping, construction, sewage or no change.</p><span class="st final">FINAL ROUND</span></div>
+      <div class="step next"><h3>Complaint PDF</h3><p>Drafted in Tamil and English, with dated before/after proof.</p><span class="st final">FINAL ROUND</span></div>
+    </div>
+  </section>
+
+  <section id="fix">
+    <div class="label">Honest numbers</div>
+    <h2>How we cut false alarms</h2>
+    <div class="fix">
+      <figure><img src="img/v0_edges.jpg" alt="First version: false alert lines along a lake shore" width="480" height="471" loading="lazy"><figcaption><b>First version:</b> thin false lines along lake shores, where water and buildings mix in one square.</figcaption></figure>
+      <figure><img src="img/v1_edges.jpg" alt="Fixed version: no false lines along the shore" width="480" height="471" loading="lazy"><figcaption><b>Fixed (v1):</b> ignores the ~20&nbsp;m rim and needs the change in two years in a row.</figcaption></figure>
+      <div class="fix-text" style="align-self:center">
+        <p class="big">94 ha → 28 ha</p>
+        <p>Flagged loss under the first rule and under the strict rule. We report the smaller, safer number.</p>
+        <div class="note"><p>Every alert says <b>"possible change, needs a ground check"</b>. NEERKATTI never names or accuses any owner.</p></div>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer>
+  <div class="wrap cols">
+    <div>
+      <h4>NEERKATTI · Team Sternritters</h4>
+      <p>Built for DEXATHON 2026, Sathyabama Institute of Science and Technology, Chennai.</p>
+      <p>Named after the <i>neerkatti</i>, Tamil Nadu's traditional lake-keepers.</p>
+      <p><a href="https://github.com/ATHULYAPANDIAN24/neerkatti">github.com/ATHULYAPANDIAN24/neerkatti</a></p>
+    </div>
+    <div>
+      <h4>Data</h4>
+      <p>Contains modified Copernicus Sentinel data (2018–2026).</p>
+      <p>Dynamic World V1, Google &amp; World Resources Institute (CC BY 4.0).</p>
+      <p>Processed with Google Earth Engine (non-commercial). Place names: © OpenStreetMap contributors.</p>
+    </div>
+  </div>
+</footer>
+
+<script>
+document.querySelectorAll('[data-compare]').forEach(function (box) {
+  var knob = box.querySelector('.knob');
+  var dragging = false;
+  function set(pct) {
+    pct = Math.max(0, Math.min(100, pct));
+    box.style.setProperty('--pos', pct + '%');
+    knob.setAttribute('aria-valuenow', Math.round(pct));
+  }
+  function fromEvent(e) {
+    var r = box.getBoundingClientRect();
+    set((e.clientX - r.left) / r.width * 100);
+  }
+  box.addEventListener('pointerdown', function (e) {
+    dragging = true; box.setPointerCapture(e.pointerId); fromEvent(e);
+  });
+  box.addEventListener('pointermove', function (e) { if (dragging) fromEvent(e); });
+  ['pointerup', 'pointercancel'].forEach(function (t) {
+    box.addEventListener(t, function () { dragging = false; });
+  });
+  knob.addEventListener('keydown', function (e) {
+    var now = parseFloat(knob.getAttribute('aria-valuenow'));
+    if (e.key === 'ArrowLeft' || e.key === 'ArrowDown') { set(now - 5); e.preventDefault(); }
+    if (e.key === 'ArrowRight' || e.key === 'ArrowUp') { set(now + 5); e.preventDefault(); }
+    if (e.key === 'Home') { set(0); e.preventDefault(); }
+    if (e.key === 'End') { set(100); e.preventDefault(); }
+  });
+});
+var toggle = document.querySelector('[data-toggle]');
+var loss = document.querySelector('[data-loss]');
+toggle.addEventListener('change', function () { loss.style.visibility = toggle.checked ? 'visible' : 'hidden'; });
+</script>
+</body>
+</html>

@@ -4,6 +4,8 @@ An AI water-keeper for Chennai's wetlands. It catches illegal filling of lakes a
 
 DEXATHON 2026 · Track: Sustainability Development · Team: Sternritters
 
+**Live demo:** <https://athulyapandian24.github.io/neerkatti/>. Drag the 2018 ↔ 2026 slider and see the flagged sites.
+
 ![Slide 3](outputs/slide3_neerkatti.png)
 
 ## What v1 finds (first real run, 15 Oct 2026)
@@ -42,6 +44,7 @@ python -m venv .venv
 .venv/Scripts/python analysis/change_map.py      # stats.json, top_spots.csv, maps
 .venv/Scripts/python analysis/spot_closeups.py   # closeups.png (before/after per spot)
 .venv/Scripts/python analysis/make_slide.py      # slide3_neerkatti.png
+.venv/Scripts/python analysis/demo_assets.py     # docs/img/ (images for the live demo page)
 ```
 
 The scripts use the Earth Engine Cloud project `dexathon-athulya` (non-commercial, Community tier).
@@ -49,7 +52,8 @@ The scripts use the Earth Engine Cloud project `dexathon-athulya` (non-commercia
 ## Roadmap
 
 - [x] v0/v1: change map + top spots + slide image
-- [ ] Round 2 web app: map + year slider + top-10 changed spots (deploy by 29 Oct)
+- [x] Live demo page: 2018 ↔ 2026 slider + checked sites + top-10 list (`docs/`, GitHub Pages)
+- [ ] Round 2 web app: interactive map + year slider + top-10 changed spots (deploy by 29 Oct)
 - [ ] Final (24 h): new-change alerts, citizen photo check, complaint PDF, monsoon radar mode
 
 ## Sources
