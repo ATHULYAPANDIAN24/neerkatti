@@ -1,0 +1,2 @@
+# Third-party files are kept byte-for-byte as published (tests/ checks their hashes)
+docs/app/vendor/** -text
