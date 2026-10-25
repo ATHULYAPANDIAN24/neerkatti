@@ -8,13 +8,14 @@ Output: outputs/topten/patch_NN.jpg and outputs/topten_grid.jpg
 """
 import io
 import json
+import os
 import pathlib
 import urllib.request
 
 import ee
 from PIL import Image, ImageDraw, ImageEnhance, ImageFont
 
-PROJECT = "dexathon-athulya"
+PROJECT = os.environ.get("EE_PROJECT", "dexathon-athulya")  # set EE_PROJECT to your own Earth Engine Cloud project
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 OUT = ROOT / "outputs" / "topten"
 OUT.mkdir(parents=True, exist_ok=True)

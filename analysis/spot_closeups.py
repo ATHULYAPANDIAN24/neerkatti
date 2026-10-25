@@ -5,6 +5,7 @@ one row per spot -> 2018 photo | 2026 photo | 2026 photo + change outline.
 """
 import csv
 import io
+import os
 import pathlib
 import urllib.request
 
@@ -13,7 +14,7 @@ from PIL import Image, ImageDraw
 
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 OUT = ROOT / "outputs"
-ee.Initialize(project="dexathon-athulya")
+ee.Initialize(project=os.environ.get("EE_PROJECT", "dexathon-athulya"))  # set EE_PROJECT to your own Cloud project
 
 SEASON = ("-02-01", "-06-01")
 BOX_M = 700          # half-width of each close-up, metres

@@ -4,13 +4,14 @@ Usage:  .venv/Scripts/python analysis/demo_assets.py
 Output: docs/img/*.jpg
 """
 import io
+import os
 import pathlib
 import urllib.request
 
 import ee
 from PIL import Image, ImageEnhance
 
-PROJECT = "dexathon-athulya"
+PROJECT = os.environ.get("EE_PROJECT", "dexathon-athulya")  # set EE_PROJECT to your own Earth Engine Cloud project
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 IMG = ROOT / "docs" / "img"
 IMG.mkdir(parents=True, exist_ok=True)

@@ -8,12 +8,13 @@ Output: outputs/ (PNG images + top_spots.csv + stats.json)
 """
 import csv
 import json
+import os
 import pathlib
 import urllib.request
 
 import ee
 
-PROJECT = "dexathon-athulya"
+PROJECT = os.environ.get("EE_PROJECT", "dexathon-athulya")  # set EE_PROJECT to your own Earth Engine Cloud project
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 OUT = ROOT / "outputs"
 OUT.mkdir(exist_ok=True)

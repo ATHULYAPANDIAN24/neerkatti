@@ -5,6 +5,7 @@ Writes outputs/slide3_neerkatti.png (1600 x 900).
 """
 import io
 import json
+import os
 import pathlib
 import urllib.request
 
@@ -13,7 +14,7 @@ from PIL import Image, ImageDraw, ImageFont
 
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 OUT = ROOT / "outputs"
-ee.Initialize(project="dexathon-athulya")
+ee.Initialize(project=os.environ.get("EE_PROJECT", "dexathon-athulya"))  # set EE_PROJECT to your own Cloud project
 
 AREA_BOUNDS = (80.17, 12.86, 80.26, 12.99)  # must match change_map.py
 SEASON = ("-02-01", "-06-01")
