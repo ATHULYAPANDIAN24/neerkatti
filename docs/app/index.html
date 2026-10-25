@@ -4,31 +4,42 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>NEERKATTI · Live map</title>
-<meta name="description" content="Interactive map of the Pallikaranai watershed, Chennai: 2018 vs 2026 Sentinel-2 images, AI land labels, and every patch of 2018 water or marsh that is now built over. DEXATHON 2026, Team Sternritters.">
-<meta property="og:title" content="NEERKATTI · Live map">
-<meta property="og:description" content="Compare 2018 and 2026 satellite images of the Pallikaranai watershed and see the top 10 flagged patches.">
-<meta property="og:image" content="https://athulyapandian24.github.io/neerkatti/img/og.jpg">
+<meta name="description" content="An AI water-keeper for Chennai's wetlands. Live map of the Pallikaranai watershed: 2018 vs 2026 Sentinel-2 images, AI land labels, and 36 patches of 2018 water or marsh flagged as built over. DEXATHON 2026, Team Sternritters.">
+<meta property="og:title" content="NEERKATTI · Live map of Chennai's lost wetlands">
+<meta property="og:description" content="Compare 2018 and 2026 satellite images of the Pallikaranai watershed: 28.1 ha of water and marsh flagged as built over, 36 patches, top 10 checked by eye.">
+<meta property="og:image" content="https://athulyapandian24.github.io/neerkatti/app/og-map.jpg">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="The NEERKATTI live map: 2018 and 2026 satellite images of the Pallikaranai watershed side by side, with the top 10 flagged patches numbered">
 <meta property="og:url" content="https://athulyapandian24.github.io/neerkatti/app/">
 <meta property="og:type" content="website">
 <meta name="twitter:card" content="summary_large_image">
 <meta name="color-scheme" content="light dark">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Ccircle cx='32' cy='32' r='30' fill='%23253C6D'/%3E%3Cpath d='M32 12C24 24 19 31 19 38a13 13 0 0 0 26 0c0-7-5-14-13-26z' fill='%23F2842F'/%3E%3C/svg%3E">
+<!-- the web font loads without blocking the page; system fonts stand in if it is slow -->
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" media="print" onload="this.media='all'">
+<!-- Leaflet 1.9.4 is served from this site (vendor/leaflet, BSD-2), so the map never waits on a CDN -->
+<link rel="stylesheet" href="vendor/leaflet/leaflet.css">
 <link rel="stylesheet" href="app.css">
+<link rel="preload" href="data/photo_2018.jpg" as="image">
+<link rel="preload" href="data/photo_2026.jpg" as="image">
 </head>
 <body>
+<a class="skip" href="#spots">Skip to the top 10 list</a>
 <div class="app">
   <header class="bar">
-    <a class="brand" href="../">NEER<span>KATTI</span></a>
-    <span class="bar-tag">Live map · Round 2 prototype</span>
+    <a class="brand" href="../" aria-label="NEERKATTI project page">NEER<span>KATTI</span></a>
+    <span class="bar-tag">AI water-keeper for Chennai's wetlands · Round 2 prototype</span>
     <nav aria-label="Links">
-      <a href="../">About</a>
-      <a href="https://github.com/ATHULYAPANDIAN24/neerkatti">GitHub</a>
+      <button type="button" class="bar-btn" id="open-intro"><span class="long">How to read this map</span><span class="short">Help</span></button>
+      <a href="../" class="hide-sm">Project page</a>
+      <a href="https://github.com/ATHULYAPANDIAN24/neerkatti#readme">GitHub</a>
     </nav>
   </header>
+
+  <p class="mobile-sum"><b>28.1&nbsp;ha</b> of 2018 water and marsh flagged as built over · Pallikaranai, Chennai · <a href="#panel">top 10 below ↓</a></p>
 
   <section class="map-wrap" id="map-wrap" aria-label="Map">
     <div class="toolbar">
@@ -46,19 +57,32 @@
       <div class="checks">
         <label class="chk"><input type="checkbox" id="show-patches" checked> Flagged patches</label>
         <label class="chk"><input type="checkbox" id="show-names" checked> Place names</label>
+        <button type="button" class="tool-btn" id="share" title="Copy a link to this exact view" aria-label="Copy a link to this exact view">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M10 14a5 5 0 0 0 7 0l3-3a5 5 0 0 0-7-7l-1 1M14 10a5 5 0 0 0-7 0l-3 3a5 5 0 0 0 7 7l1-1" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+          <span>Copy link</span>
+        </button>
       </div>
     </div>
-    <div id="map" aria-label="Map of the Pallikaranai watershed, 2018 and 2026"></div>
+    <div id="map" role="region" aria-label="Map of the Pallikaranai watershed, 2018 and 2026"></div>
+    <div class="map-note" id="map-note" role="status" aria-live="polite" hidden></div>
+    <div class="coach" id="coach" hidden role="group" aria-labelledby="coach-title">
+      <div class="coach-top"><span class="coach-step" id="coach-step">1 of 3</span><button type="button" class="coach-x" id="coach-x" aria-label="End the tour">×</button></div>
+      <h2 id="coach-title" tabindex="-1"></h2>
+      <p id="coach-text" aria-live="polite"></p>
+      <div id="coach-fig"></div>
+      <div class="coach-btns"><button type="button" class="btn ghost" id="coach-back">Back</button><button type="button" class="btn primary" id="coach-next">Next</button></div>
+    </div>
+    <div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
   </section>
 
-  <aside class="panel" aria-label="Flagged patches">
+  <aside class="panel" id="panel" aria-label="About this map and the flagged patches">
     <p class="kicker">Pallikaranai watershed · Chennai</p>
     <h1>Where water and marsh became buildings, 2018&nbsp;→&nbsp;2026</h1>
     <p class="lead">Sentinel-2 satellite images of the Feb–May dry season, labelled square by square by an AI model (Google's Dynamic World). Red patches were water or marsh in 2018 and are buildings in both 2025 and 2026.</p>
 
     <div class="stats">
-      <div class="stat"><b data-stat="lost">–</b><span data-stat="acres">flagged</span></div>
-      <div class="stat"><b data-stat="count">–</b><span>patches of ≥&nbsp;0.1&nbsp;ha</span></div>
+      <div class="stat"><b data-stat="lost">28.1 ha</b><span data-stat="acres">≈69 acres flagged</span></div>
+      <div class="stat"><b data-stat="count">36</b><span>patches of ≥&nbsp;0.1&nbsp;ha</span></div>
       <div class="stat"><b>9 of 10</b><span>top patches show real change</span></div>
     </div>
 
@@ -67,12 +91,23 @@
       <p>Every patch is a <b>possible change that needs a ground check</b>. NEERKATTI never names owners.</p>
     </div>
 
+    <div class="phase" aria-label="What works now and what comes in the final round">
+      <div class="phase-col">
+        <span class="st now">Working now</span>
+        <p>Satellite compare · AI labels · 36 flagged patches · top-10 check with close-ups · shareable links · open GeoJSON</p>
+      </div>
+      <div class="phase-col">
+        <span class="st final">Final round · 4–5 Nov</span>
+        <p>Alerts for new changes · citizen photo check · complaint PDF in Tamil and English · radar for monsoon clouds</p>
+      </div>
+    </div>
+
     <div class="list-head">
       <h2>Top 10 flagged patches</h2>
       <button type="button" class="link-btn" id="reset">Whole area</button>
     </div>
     <ol class="spots" id="spots"></ol>
-    <p class="small">Tap a patch to zoom to it. We checked all ten by eye on before/after and high-resolution satellite images: 9 show construction, paving or filling, and 1 is unclear. Sites A, B and C are the three largest.</p>
+    <p class="small">Tap a patch to zoom to it and see its 2018 | 2026 close-up. We checked all ten by eye on those close-ups and on current high-resolution satellite imagery: 9 show building, paving or filling, and 1 is unclear (<a href="https://github.com/ATHULYAPANDIAN24/neerkatti/blob/main/outputs/topten_check.md">notes</a>). A visual check, not a ground survey.</p>
 
     <details class="about">
       <summary>How a patch gets flagged</summary>
@@ -82,30 +117,88 @@
         <li>A square is flagged if it was water or marsh in 2018 (ignoring the outer ~20&nbsp;m rim of each water body) and is buildings in <b>both</b> 2025 and 2026.</li>
         <li>Patches smaller than about 0.1&nbsp;ha are dropped as noise.</li>
       </ol>
+      <p class="more"><a href="https://github.com/ATHULYAPANDIAN24/neerkatti#how-it-works">Full method and code →</a></p>
     </details>
 
     <details class="about">
-      <summary>Data and downloads</summary>
+      <summary>What's different</summary>
       <ul>
-        <li data-meta="photos">Sentinel-2 photos: median of the clear Feb–May images of each year.</li>
-        <li>Study area: 80.17–80.26°E, 12.86–12.99°N.</li>
-        <li><a href="data/patches.geojson" download>Download all patches (GeoJSON)</a></li>
-        <li>Made with Google Earth Engine by <code>analysis/app_assets.py</code>.</li>
+        <li><b>ISRO's wetland atlas</b> compares snapshots ten years apart (2006–07 vs 2017–18).</li>
+        <li><b>TN-SWIP</b>, the state's satellite pilot, sends its alerts to officials (<a href="https://www.deccanchronicle.com/southern-states/tamil-nadu/tech-tools-to-help-save-water-bodies-of-tamil-nadu-1981503">Deccan Chronicle, 23 Aug 2026</a>).</li>
+        <li><b>NEERKATTI</b> is open to anyone, flags a square only if it stays built-up two years running, and hands over the data. Continuous alerts and complaints come in the final round.</li>
       </ul>
     </details>
 
-    <p class="next"><b>Final round (24&nbsp;h):</b> alerts for new changes, a citizen photo check, and a complaint letter as PDF.</p>
+    <details class="about">
+      <summary>How far to trust it</summary>
+      <ul>
+        <li>Dynamic World's own validation gives 86.7% user's accuracy for buildings but only 36.8% producer's accuracy for marsh (<a href="https://www.nature.com/articles/s41597-022-01307-4">Brown et al. 2022</a>, Tables 7–8). It misses marsh, so 28.1&nbsp;ha is a cautious count.</li>
+        <li>10&nbsp;m squares miss small dumping, and monsoon clouds limit us to dry-season images for now.</li>
+        <li>The top-10 check is a visual check of imagery, not a ground survey.</li>
+      </ul>
+    </details>
+
+    <details class="about">
+      <summary>Cost and data</summary>
+      <ul>
+        <li><b>₹0 data cost:</b> free Sentinel-2 images and Dynamic World labels, Google Earth Engine (non-commercial), hosted free on GitHub Pages. No server and no API keys.</li>
+        <li data-meta="photos">Sentinel-2 photos: median of the clear Feb–May images of each year.</li>
+        <li>Study area: 80.17–80.26°E, 12.86–12.99°N. Made by <code>analysis/app_assets.py</code>.</li>
+        <li><a href="data/patches.geojson" download="neerkatti_patches.geojson">Download all 36 patches (GeoJSON)</a></li>
+      </ul>
+    </details>
+
+    <p class="links-row"><a href="../">Project page</a><a href="https://github.com/ATHULYAPANDIAN24/neerkatti#readme">Code and README</a><button type="button" class="link-btn" id="start-tour">Take the 30-second tour</button></p>
 
     <footer class="credits">
-      <p>Contains modified Copernicus Sentinel data (2018–2026). Dynamic World V1, Google &amp; World Resources Institute (CC BY 4.0). Map © OpenStreetMap contributors. Processed with Google Earth Engine (non-commercial).</p>
-      <p>NEERKATTI · Team Sternritters · DEXATHON 2026, Sathyabama, Chennai.</p>
+      <p>Contains modified Copernicus Sentinel data (2018–2026). Dynamic World V1, Google &amp; World Resources Institute (CC BY 4.0). Map © OpenStreetMap contributors. Processed with Google Earth Engine (non-commercial). Map library: Leaflet (BSD-2). Code: MIT licence.</p>
+      <p>NEERKATTI · Team Sternritters (DEX26302) · DEXATHON 2026, Sathyabama, Chennai.</p>
     </footer>
   </aside>
 </div>
 
-<noscript><p class="noscript">This map needs JavaScript. The <a href="../">project page</a> works without it.</p></noscript>
+<dialog class="intro" id="intro" aria-labelledby="intro-title">
+  <form method="dialog" class="intro-x"><button aria-label="Close">×</button></form>
+  <p class="kicker">DEXATHON 2026 · Team Sternritters · Round 2 prototype</p>
+  <h2 id="intro-title" tabindex="-1" autofocus>NEERKATTI, an AI water-keeper for Chennai's wetlands</h2>
+  <p>An AI model labels free satellite images square by square. Our rule flags 2018 water and marsh in the Pallikaranai watershed that is built over in <b>both</b> 2025 and 2026.</p>
+  <div class="intro-stats">
+    <div><b>28.1&nbsp;ha</b><span>flagged (≈69 acres)</span></div>
+    <div><b>36</b><span>patches on the map</span></div>
+    <div><b>9 of 10</b><span>top patches show real change*</span></div>
+  </div>
+  <div class="intro-cols">
+    <div>
+      <span class="st now">Working now</span>
+      <ul>
+        <li>2018 vs 2026 satellite compare</li>
+        <li>AI land labels for every 10&nbsp;m square</li>
+        <li>36 flagged patches, top 10 checked with close-ups</li>
+        <li>Shareable links and open GeoJSON</li>
+      </ul>
+    </div>
+    <div>
+      <span class="st final">Final round · 4–5 Nov</span>
+      <ul>
+        <li>Alerts for new changes</li>
+        <li>Citizen photo check by a vision model</li>
+        <li>Complaint PDF in Tamil and English</li>
+        <li>Sentinel-1 radar for monsoon clouds</li>
+      </ul>
+      <p class="tiny">Planned, not built yet: the rules say major features are built in the 24-hour final.</p>
+    </div>
+  </div>
+  <p class="tiny">*A visual check of satellite imagery, not a ground survey. Every patch is a possible change that needs a ground check.</p>
+  <div class="intro-btns">
+    <button type="button" class="btn primary" id="intro-tour">Take the 30-second tour</button>
+    <button type="button" class="btn ghost" id="intro-close">Explore the map</button>
+  </div>
+  <p class="intro-links"><a href="../">Project page</a><a href="https://github.com/ATHULYAPANDIAN24/neerkatti#how-it-works">Method</a><a href="https://github.com/ATHULYAPANDIAN24/neerkatti">Code on GitHub</a></p>
+</dialog>
 
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+<noscript><p class="noscript">This map needs JavaScript. The <a href="../">project page</a> shows the same results without it.</p></noscript>
+
+<script src="vendor/leaflet/leaflet.js"></script>
 <script src="data/neerkatti_data.js"></script>
 <script src="app.js"></script>
 </body>
