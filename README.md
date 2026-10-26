@@ -117,7 +117,7 @@ Then run the steps in order. Each step reads only what the earlier ones wrote.
 | 3 | `.venv/Scripts/python analysis/patch_details.py` | adds zone or village names, AI confidence and the images-per-season counts; close-ups of patches 11–36 in `outputs/closeups/` |
 | 4 | `.venv/Scripts/python analysis/topten_closeups.py` | `outputs/topten/`: a 2018 \| 2026 close-up of each top-10 patch |
 | 5 | `.venv/Scripts/python analysis/app_closeups.py` | `docs/app/data/closeups/`: web-sized copies (no Earth Engine) |
-| 6 | `.venv/Scripts/python analysis/web_images.py` | `docs/app/data/*.webp`: the map images as WebP, at the map's Web Mercator shape (no Earth Engine) |
+| 6 | `.venv/Scripts/python analysis/web_images.py` | `docs/app/data/*.webp`: the map images as WebP, at the map's Web Mercator shape, plus light copies of the photos to show first (no Earth Engine) |
 | 7 | `.venv/Scripts/python analysis/demo_assets.py` | `docs/img/`: images for the project page |
 | 8 | `.venv/Scripts/python -m unittest discover -s tests -v` and `node --test tests/*.test.js` | nothing; checks that every number agrees and the map logic works |
 
@@ -151,12 +151,16 @@ Then open <http://localhost:8765/app/>. Opening `docs/app/index.html` straight f
 
 ## Quality checks
 
-Measured on 27 Oct 2026 on a local copy of the site (Python's `http.server`, which does not compress files the way GitHub Pages does):
+Lighthouse 12.8, 27 Oct 2026:
 
-| Lighthouse 12.8 | Performance | Accessibility | Best practices | SEO |
+| Where | Performance | Accessibility | Best practices | SEO |
 |---|---|---|---|---|
-| Mobile (simulated slow 4G) | 86 | 100 | 96 | 100 |
-| Desktop | 96 | 100 | 100 | 100 |
+| Live site, desktop | 97 | 100 | 100 | 100 |
+| Live site, mobile (simulated slow 4G) | 74 | 100 | 96 | 100 |
+| Local copy, desktop | 96 | 100 | 100 | 100 |
+| Local copy, mobile (simulated slow 4G) | 86 | 100 | 96 | 100 |
+
+On the live mobile run the first satellite image took 8.3 s to appear: the two full images (about 680 KB) downloaded alongside the street-map tiles. Since then the map shows light 600 px copies first (about 200 KB for both years), swaps in the full images when they arrive, and loads the street map only after the satellite images. The live mobile score has not been measured again since that change.
 
 - **axe-core 4.10:** no violations in light or dark mode at phone width, with every panel, a popup, the AI labels and the intro open.
 - **The one best-practice note left:** OpenStreetMap's base tiles are 256 px and look soft on high-density phone screens. Sharper tiles would mean four times as many requests to OSM's volunteer-run servers, so we left them.

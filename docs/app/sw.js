@@ -2,7 +2,7 @@
 // opened, so it still works with no connection (a venue with poor Wi-Fi, say).
 // Online, every request still goes to the network first, so a new version shows
 // at once; the saved copy is only the fallback. tests/ checks the list below.
-var VERSION = 'neerkatti-r2-2';
+var VERSION = 'neerkatti-r2-3';
 var SHELL = VERSION + '-shell';
 var TILES = VERSION + '-tiles';
 var MAX_TILES = 400;
@@ -10,6 +10,7 @@ var PRECACHE = [
   './', 'index.html', 'app.css', 'core.js', 'app.js', 'manifest.webmanifest',
   'vendor/leaflet/leaflet.css', 'vendor/leaflet/leaflet.js',
   'data/neerkatti_data.js', 'data/patches.geojson',
+  'data/photo_2018_light.webp', 'data/photo_2026_light.webp',
   'data/photo_2018.webp', 'data/photo_2026.webp', 'data/labels_2018.webp', 'data/labels_2026.webp',
   'icons/icon-192.png'
 ];

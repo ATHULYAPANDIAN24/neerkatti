@@ -7,8 +7,12 @@ This resizes them once to the shape they are shown at (no new detail; the AI lab
 use nearest-neighbour so every square keeps its own label) and saves WebP, which
 is much smaller than the JPEG/PNG exports. No Earth Engine calls.
 
+The satellite photos also get a light copy (600 px wide) that the map shows first,
+so a phone on a slow connection sees the area in a second or two; the full image
+replaces it as soon as it arrives.
+
 Usage:  .venv/Scripts/python analysis/web_images.py
-Output: docs/app/data/photo_YYYY.webp and labels_YYYY.webp
+Output: docs/app/data/photo_YYYY.webp, photo_YYYY_light.webp and labels_YYYY.webp
 """
 import math
 import pathlib
@@ -18,6 +22,7 @@ from PIL import Image
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 DATA = ROOT / "docs" / "app" / "data"
 BOX = [80.17, 12.86, 80.26, 12.99]  # west, south, east, north (as in app_assets.py)
+LIGHT_WIDTH = 600
 
 
 def mercator_y(lat):
@@ -27,11 +32,18 @@ def mercator_y(lat):
 # width / height of the box as the map draws it
 ASPECT = math.radians(BOX[2] - BOX[0]) / (mercator_y(BOX[3]) - mercator_y(BOX[1]))
 
+
+def save(img, size, resample, out, **opts):
+    img.resize(size, resample).save(out, "WEBP", method=6, **opts)
+    print(f"  -> {out.name} {size}, {out.stat().st_size // 1024} KB")
+
+
 for year in (2018, 2026):
-    for name, resample, opts in ((f"photo_{year}.jpg", Image.LANCZOS, {"quality": 82, "method": 6}),
-                                 (f"labels_{year}.png", Image.NEAREST, {"lossless": True, "method": 6})):
+    for name, resample, opts in ((f"photo_{year}.jpg", Image.LANCZOS, {"quality": 82}),
+                                 (f"labels_{year}.png", Image.NEAREST, {"lossless": True})):
         src = Image.open(DATA / name).convert("RGB")
-        size = (src.width, round(src.width / ASPECT))
-        out = DATA / (pathlib.Path(name).stem + ".webp")
-        src.resize(size, resample).save(out, "WEBP", **opts)
-        print(f"{name} {src.size} -> {out.name} {size}, {(DATA / name).stat().st_size // 1024} KB -> {out.stat().st_size // 1024} KB")
+        print(f"{name} {src.size}, {(DATA / name).stat().st_size // 1024} KB")
+        save(src, (src.width, round(src.width / ASPECT)), resample, DATA / (pathlib.Path(name).stem + ".webp"), **opts)
+        if name.startswith("photo"):
+            save(src, (LIGHT_WIDTH, round(LIGHT_WIDTH / ASPECT)), Image.LANCZOS,
+                 DATA / f"photo_{year}_light.webp", quality=72)

@@ -250,10 +250,14 @@
 
   // OpenStreetMap around the study area (CSS dims it, and darkens it in dark mode).
   // Tiles are fetched with CORS so the offline copy can keep the ones already seen.
-  L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+  // The street map only frames the satellite images, so it waits until they have
+  // loaded (or 4 s): on a slow phone the images then get the whole connection first.
+  var basemap = L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
     maxZoom: 19, crossOrigin: true,
     attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-  }).addTo(map);
+  });
+  function addBasemap() { if (!map.hasLayer(basemap)) basemap.addTo(map); }
+  setTimeout(addBasemap, 4000);
 
   // Our own place labels (positions from OpenStreetMap), drawn over the satellite images
   function label(p, cls) {
@@ -269,13 +273,17 @@
   }
 
   var imgAttr = 'Contains modified Copernicus Sentinel data · Dynamic World';
-  function overlay(file, pane, alt, cls) {
-    return L.imageOverlay('data/' + file, box, { pane: pane, alt: alt, attribution: imgAttr, className: cls || '' });
+  // `full`: a light copy (analysis/web_images.py) shows first, then the full image
+  // replaces it; the browser keeps the light one on screen until the full one is ready.
+  function overlay(file, pane, alt, cls, full) {
+    var layer = L.imageOverlay('data/' + file, box, { pane: pane, alt: alt, attribution: imgAttr, className: cls || '' });
+    if (full) layer.once('load', function () { layer.setUrl('data/' + full); });
+    return layer;
   }
   var images = {
     photo: {
-      before: overlay('photo_2018.webp', 'before', 'Sentinel-2 satellite image, Feb–May 2018'),
-      after: overlay('photo_2026.webp', 'after', 'Sentinel-2 satellite image, Feb–May 2026')
+      before: overlay('photo_2018_light.webp', 'before', 'Sentinel-2 satellite image, Feb–May 2018', '', 'photo_2018.webp'),
+      after: overlay('photo_2026_light.webp', 'after', 'Sentinel-2 satellite image, Feb–May 2026', '', 'photo_2026.webp')
     },
     labels: {
       before: overlay('labels_2018.webp', 'before', 'AI land labels, 2018', 'dw-img'),
@@ -296,7 +304,7 @@
     var need = [state.view + 'before', state.view + 'after'];
     var done = need.every(function (k) { return loaded[k]; });
     setNote(done ? '' : (state.view === 'labels' ? 'Loading AI labels…' : 'Loading satellite images…'));
-    if (done) connection();
+    if (done) { connection(); addBasemap(); }
   }
 
   // ---- 2018 / 2026 compare ------------------------------------------------
