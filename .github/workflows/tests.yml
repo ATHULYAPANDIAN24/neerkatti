@@ -1,0 +1,30 @@
+# Runs on every push and pull request: every number on the site agrees with the data,
+# the shipped files are intact, and the map's logic works. No Earth Engine and no network needed.
+name: tests
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  tests:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Data and page consistency (Python standard library only)
+        run: python -m unittest discover -s tests -v
+      - name: Map logic (Node test runner)
+        run: node --test tests/*.test.js
+      - name: JavaScript syntax
+        run: for f in docs/app/*.js; do node --check "$f"; done

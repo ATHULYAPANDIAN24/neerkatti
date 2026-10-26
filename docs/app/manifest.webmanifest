@@ -1,0 +1,16 @@
+{
+  "name": "NEERKATTI · Live map",
+  "short_name": "NEERKATTI",
+  "description": "An AI water-keeper for Chennai's wetlands: 2018 vs 2026 satellite images of the Pallikaranai watershed and 36 patches of water or marsh flagged as built over.",
+  "lang": "en",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#0E1422",
+  "theme_color": "#253C6D",
+  "icons": [
+    { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png" },
+    { "src": "icons/icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}

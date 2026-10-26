@@ -15,6 +15,9 @@
 <meta property="og:type" content="website">
 <meta name="twitter:card" content="summary_large_image">
 <meta name="color-scheme" content="light dark">
+<meta name="theme-color" content="#253C6D">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Ccircle cx='32' cy='32' r='30' fill='%23253C6D'/%3E%3Cpath d='M32 12C24 24 19 31 19 38a13 13 0 0 0 26 0c0-7-5-14-13-26z' fill='%23F2842F'/%3E%3C/svg%3E">
 <!-- the web font loads without blocking the page; system fonts stand in if it is slow -->
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -23,11 +26,11 @@
 <!-- Leaflet 1.9.4 is served from this site (vendor/leaflet, BSD-2), so the map never waits on a CDN -->
 <link rel="stylesheet" href="vendor/leaflet/leaflet.css">
 <link rel="stylesheet" href="app.css">
-<link rel="preload" href="data/photo_2018.jpg" as="image">
-<link rel="preload" href="data/photo_2026.jpg" as="image">
+<link rel="preload" href="data/photo_2018.webp" as="image" type="image/webp">
+<link rel="preload" href="data/photo_2026.webp" as="image" type="image/webp">
 </head>
 <body>
-<a class="skip" href="#spots">Skip to the top 10 list</a>
+<a class="skip" href="#spots">Skip to the list of patches</a>
 <div class="app">
   <header class="bar">
     <a class="brand" href="../" aria-label="NEERKATTI project page">NEER<span>KATTI</span></a>
@@ -39,7 +42,7 @@
     </nav>
   </header>
 
-  <p class="mobile-sum"><b>28.1&nbsp;ha</b> of 2018 water and marsh flagged as built over · Pallikaranai, Chennai · <a href="#panel">top 10 below ↓</a></p>
+  <section class="mobile-sum" aria-label="Summary"><b>28.1&nbsp;ha</b> of 2018 water and marsh flagged as built over · Pallikaranai, Chennai · <a href="#panel">patch list below ↓</a></section>
 
   <section class="map-wrap" id="map-wrap" aria-label="Map">
     <div class="toolbar">
@@ -57,10 +60,13 @@
       <div class="checks">
         <label class="chk"><input type="checkbox" id="show-patches" checked> Flagged patches</label>
         <label class="chk"><input type="checkbox" id="show-names" checked> Place names</label>
-        <button type="button" class="tool-btn" id="share" title="Copy a link to this exact view" aria-label="Copy a link to this exact view">
-          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M10 14a5 5 0 0 0 7 0l3-3a5 5 0 0 0-7-7l-1 1M14 10a5 5 0 0 0-7 0l-3 3a5 5 0 0 0 7 7l1-1" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
-          <span>Copy link</span>
-        </button>
+        <span class="tool-group">
+          <button type="button" class="tool-btn" id="near-me" title="List the patches nearest to you. Your location stays on this device." aria-label="Near me: list the patches nearest to you"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4" fill="none" stroke="currentColor" stroke-width="2"/><path d="M12 2v4M12 18v4M2 12h4M18 12h4" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg><span>Near me</span></button>
+          <button type="button" class="tool-btn" id="share" title="Copy a link to this exact view" aria-label="Copy a link to this exact view">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M10 14a5 5 0 0 0 7 0l3-3a5 5 0 0 0-7-7l-1 1M14 10a5 5 0 0 0-7 0l-3 3a5 5 0 0 0 7 7l1-1" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+            <span>Copy link</span>
+          </button>
+        </span>
       </div>
     </div>
     <div id="map" role="region" aria-label="Map of the Pallikaranai watershed, 2018 and 2026"></div>
@@ -75,7 +81,7 @@
     <div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
   </section>
 
-  <aside class="panel" id="panel" aria-label="About this map and the flagged patches">
+  <main class="panel" id="panel">
     <p class="kicker">Pallikaranai watershed · Chennai</p>
     <h1>Where water and marsh became buildings, 2018&nbsp;→&nbsp;2026</h1>
     <p class="lead">Sentinel-2 satellite images of the Feb–May dry season, labelled square by square by an AI model (Google's Dynamic World). Red patches were water or marsh in 2018 and are buildings in both 2025 and 2026.</p>
@@ -94,7 +100,7 @@
     <div class="phase" aria-label="What works now and what comes in the final round">
       <div class="phase-col">
         <span class="st now">Working now</span>
-        <p>Satellite compare · AI labels · 36 flagged patches · top-10 check with close-ups · shareable links · open GeoJSON</p>
+        <p>Satellite compare · AI labels · 36 patches with close-ups and AI confidence · top 10 checked by eye · near me · share links · offline · open data</p>
       </div>
       <div class="phase-col">
         <span class="st final">Final round · 4–5 Nov</span>
@@ -102,12 +108,37 @@
       </div>
     </div>
 
-    <div class="list-head">
-      <h2>Top 10 flagged patches</h2>
-      <button type="button" class="link-btn" id="reset">Whole area</button>
-    </div>
-    <ol class="spots" id="spots"></ol>
-    <p class="small">Tap a patch to zoom to it and see its 2018 | 2026 close-up. We checked all ten by eye on those close-ups and on current high-resolution satellite imagery: 9 show building, paving or filling, and 1 is unclear (<a href="https://github.com/ATHULYAPANDIAN24/neerkatti/blob/main/outputs/topten_check.md">notes</a>). A visual check, not a ground survey.</p>
+    <section class="list" aria-labelledby="list-title">
+      <div class="list-head">
+        <h2 id="list-title">Top 10 flagged patches</h2>
+        <button type="button" class="link-btn" id="reset">Whole area</button>
+      </div>
+      <div class="list-tools">
+        <fieldset class="seg seg-sm">
+          <legend class="sr">Which patches to list</legend>
+          <label><input type="radio" name="scope" value="top" checked><span>Top 10</span></label>
+          <label><input type="radio" name="scope" value="all"><span>All 36</span></label>
+        </fieldset>
+        <label class="sort"><span>Sort</span>
+          <select id="sort">
+            <option value="size">Largest first</option>
+            <option value="confidence">AI confidence</option>
+            <option value="place">Area name</option>
+            <option value="distance" disabled hidden>Nearest to me</option>
+          </select>
+        </label>
+      </div>
+      <p class="list-note" id="list-note" role="status" aria-live="polite" hidden></p>
+      <p class="filter" id="filter" hidden><span id="filter-text"></span><button type="button" class="link-btn" id="filter-clear">Show all</button></p>
+      <ol class="spots" id="spots"></ol>
+      <p class="small">Tap a patch to zoom to it and see its 2018 | 2026 close-up. We checked the top 10 by eye on those close-ups and on current high-resolution satellite imagery: 9 show building, paving or filling, and 1 is unclear (<a href="https://github.com/ATHULYAPANDIAN24/neerkatti/blob/main/outputs/topten_check.md">notes</a>). A visual check, not a ground survey. The other 26 are not checked yet; the AI confidence shows which to check first.</p>
+    </section>
+
+    <section class="chart-card" aria-labelledby="areas-title">
+      <h2 id="areas-title">Flagged area by zone or village</h2>
+      <p class="small">All 36 patches. Inside Chennai they are grouped by Greater Chennai Corporation zone, outside it by village (names from OpenStreetMap). Tap one to list its patches.</p>
+      <div class="hbars" id="areas"></div>
+    </section>
 
     <details class="about">
       <summary>How a patch gets flagged</summary>
@@ -116,6 +147,7 @@
         <li>For each year we keep the most common label for each square during Feb–May.</li>
         <li>A square is flagged if it was water or marsh in 2018 (ignoring the outer ~20&nbsp;m rim of each water body) and is buildings in <b>both</b> 2025 and 2026.</li>
         <li>Patches smaller than about 0.1&nbsp;ha are dropped as noise.</li>
+        <li>Each patch gets an <b>AI confidence</b> from Dynamic World's own probabilities: how sure it was of water or marsh in 2018 and of buildings in 2025 and 2026. The weakest of the three sets the level: high from 50%, medium from 35%, low below.</li>
       </ol>
       <p class="more"><a href="https://github.com/ATHULYAPANDIAN24/neerkatti#how-it-works">Full method and code →</a></p>
     </details>
@@ -135,7 +167,19 @@
         <li>Dynamic World's own validation gives 86.7% user's accuracy for buildings but only 36.8% producer's accuracy for marsh (<a href="https://www.nature.com/articles/s41597-022-01307-4">Brown et al. 2022</a>, Tables 7–8). It misses marsh, so 28.1&nbsp;ha is a cautious count.</li>
         <li>10&nbsp;m squares miss small dumping, and monsoon clouds limit us to dry-season images for now.</li>
         <li>The top-10 check is a visual check of imagery, not a ground survey.</li>
+        <li>AI confidence is the model's own certainty, not a measure of truth. In the top 10, the unclear patch (#9) is <i>medium</i>, like six of the nine confirmed ones. Low-confidence patches are the ones to check first.</li>
       </ul>
+    </details>
+
+    <details class="about" id="why">
+      <summary>Why this area and these years</summary>
+      <p><b>Why 2018.</b> It is the first dry season with enough images. Sentinel-2B joined Sentinel-2A in 2017, so Dynamic World has <b>18</b> images of this area for Feb–May 2018, but only <b>4</b> in 2016 and <b>4</b> in 2017. A season summary made from 4 images can flip on one cloudy or mislabelled day.</p>
+      <figure class="cols-fig">
+        <div class="cols" id="years-chart"></div>
+        <figcaption>Dynamic World images of the study area, Feb–May of each year. Orange: the seasons the rule uses.</figcaption>
+      </figure>
+      <p><b>Why 2026.</b> It is the latest complete dry season, and the rule also needs 2025: a square must be buildings in both.</p>
+      <p><b>Why one watershed.</b> So that every result could be checked: the top 10 by eye, and every patch with the AI's own confidence. Pallikaranai is a Ramsar wetland (site 2481) under pressure now, and one study area at 10&nbsp;m fits the free Earth Engine tier and a site with no server. The rule itself runs on any area; Chennai-wide runs come next.</p>
     </details>
 
     <details class="about">
@@ -144,7 +188,8 @@
         <li><b>₹0 data cost:</b> free Sentinel-2 images and Dynamic World labels, Google Earth Engine (non-commercial), hosted free on GitHub Pages. No server and no API keys.</li>
         <li data-meta="photos">Sentinel-2 photos: median of the clear Feb–May images of each year.</li>
         <li>Study area: 80.17–80.26°E, 12.86–12.99°N. Made by <code>analysis/app_assets.py</code>.</li>
-        <li><a href="data/patches.geojson" download="neerkatti_patches.geojson">Download all 36 patches (GeoJSON)</a></li>
+        <li><a href="data/patches.geojson" download="neerkatti_patches.geojson">Download all 36 patches (GeoJSON)</a>, with their zone or village and AI confidence.</li>
+        <li>Once opened, the map also works offline: this site keeps a copy on your device.</li>
       </ul>
     </details>
 
@@ -154,7 +199,7 @@
       <p>Contains modified Copernicus Sentinel data (2018–2026). Dynamic World V1, Google &amp; World Resources Institute (CC BY 4.0). Map © OpenStreetMap contributors. Processed with Google Earth Engine (non-commercial). Map library: Leaflet (BSD-2). Code: MIT licence.</p>
       <p>NEERKATTI · Team Sternritters (DEX26302) · DEXATHON 2026, Sathyabama, Chennai.</p>
     </footer>
-  </aside>
+  </main>
 </div>
 
 <dialog class="intro" id="intro" aria-labelledby="intro-title">
@@ -173,7 +218,8 @@
       <ul>
         <li>2018 vs 2026 satellite compare</li>
         <li>AI land labels for every 10&nbsp;m square</li>
-        <li>36 flagged patches, top 10 checked with close-ups</li>
+        <li>36 flagged patches with close-ups and AI confidence</li>
+        <li>Top 10 checked by eye; patches near you</li>
         <li>Shareable links and open GeoJSON</li>
       </ul>
     </div>
@@ -200,6 +246,7 @@
 
 <script src="vendor/leaflet/leaflet.js"></script>
 <script src="data/neerkatti_data.js"></script>
+<script src="core.js"></script>
 <script src="app.js"></script>
 </body>
 </html>

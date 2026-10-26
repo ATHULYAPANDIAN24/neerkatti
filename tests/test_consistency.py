@@ -93,12 +93,32 @@ class Data(unittest.TestCase):
                 self.assertTrue(BOX[0] <= lon <= BOX[2] and BOX[1] <= lat <= BOX[3], f["properties"]["rank"])
 
     def test_suburb_level_names_only(self):
-        allowed = {p["name"] for p in self.meta["places"]} | {"Sunnambu Kulathur", "Panaiyur"}
-        keys = {"rank", "area_ha", "lat", "lon", "change", "status", "place", "site", "checked_by_eye", "finding"}
+        # map labels, the Round 1 names, and the suburbs OpenStreetMap returned (outputs/places.json)
+        osm = {re.sub(r"^Zone \d+ ", "", n) for n in json.loads(read("outputs/places.json")).values() if n}
+        allowed = {p["name"] for p in self.meta["places"]} | {"Sunnambu Kulathur", "Panaiyur"} | osm
+        keys = {"rank", "area_ha", "lat", "lon", "change", "status", "place", "site", "checked_by_eye", "finding",
+                "p_wet_2018", "p_built_2025", "p_built_2026", "ai_confidence", "admin_area"}
         for p in self.props:
             self.assertLessEqual(set(p), keys, "unexpected property")
             if p["place"] is not None:
                 self.assertIn(p["place"], allowed)
+            self.assertEqual(p["place"] is not None, p["rank"] <= 10, "only the top 10 carry a place name")
+            # a Corporation zone ("Perungudi zone") or an OpenStreetMap village name
+            self.assertIn(re.sub(r" zone$", "", p["admin_area"]), osm)
+
+    def test_ai_confidence(self):
+        # levels fixed in analysis/patch_details.py before the numbers were computed
+        self.assertEqual(self.meta["confidence_levels"], {"high": 0.5, "medium": 0.35, "low": 0.0})
+        for p in self.props:
+            weakest = min(p["p_wet_2018"], p["p_built_2025"], p["p_built_2026"])
+            level = "high" if weakest >= 0.5 else "medium" if weakest >= 0.35 else "low"
+            self.assertEqual(p["ai_confidence"], level, p["rank"])
+
+    def test_dynamic_world_images_per_season(self):
+        per_year = self.meta["dw_images_by_year"]
+        self.assertEqual(sorted(per_year), [str(y) for y in range(2016, 2027)])
+        self.assertEqual(per_year["2018"], self.stats["dw_images_before"])
+        self.assertEqual(per_year["2026"], self.stats["dw_images_after"])
 
     def test_top10_matches_top_spots_csv(self):
         with open(ROOT / "outputs" / "top_spots.csv", newline="", encoding="utf-8") as fh:
@@ -121,9 +141,9 @@ class Data(unittest.TestCase):
             self.assertTrue(place.startswith(p["place"]), rank)
             self.assertEqual("unclear" in result, "unclear" in p["finding"], rank)
 
-    def test_top10_closeups_exist(self):
-        for rank in range(1, 11):
-            self.assertTrue((APP / "data" / "closeups" / f"patch_{rank:02d}.jpg").is_file(), rank)
+    def test_every_patch_has_a_closeup(self):
+        for p in self.props:
+            self.assertTrue((APP / "data" / "closeups" / f"patch_{p['rank']:02d}.jpg").is_file(), p["rank"])
 
 
 class Pages(unittest.TestCase):
@@ -144,6 +164,21 @@ class Pages(unittest.TestCase):
         self.assertEqual(stat["count"], str(self.meta["patch_count"]))
         self.assertEqual(stat["acres"], f"≈{self.acres} acres flagged")
         self.assertIn("9 of 10", self.app)
+        self.assertIn(f"All {self.meta['patch_count']}", self.app)
+
+    def test_why_these_years_matches_the_data(self):
+        n = self.meta["dw_images_by_year"]
+        self.assertIn(f"has {n['2018']} images of this area for Feb–May 2018, but only {n['2016']} in 2016 and {n['2017']} in 2017", self.app)
+
+    def test_confidence_claim_about_the_top10(self):
+        # "the unclear patch (#9) is medium, like six of the nine confirmed ones"
+        top = self.patches["features"][:10]
+        unclear = [f["properties"] for f in top if "unclear" in f["properties"]["finding"]]
+        confirmed = [f["properties"] for f in top if "unclear" not in f["properties"]["finding"]]
+        self.assertEqual([p["rank"] for p in unclear], [9])
+        self.assertEqual(unclear[0]["ai_confidence"], "medium")
+        self.assertEqual(sum(p["ai_confidence"] == "medium" for p in confirmed), 6)
+        self.assertIn("like six of the nine confirmed ones", self.app)
 
     def test_project_page_numbers(self):
         self.assertIn(f"{self.meta['lost_ha']} ha", self.page)
@@ -192,6 +227,16 @@ class StaticSite(unittest.TestCase):
     def test_app_loads_no_script_from_a_cdn(self):
         html = read("docs/app/index.html")
         self.assertEqual(re.findall(r'<script[^>]+src="https?://', html), [])
+
+    def test_offline_copy_lists_real_files(self):
+        sw = read("docs/app/sw.js")
+        files = re.findall(r"'([^']+)'", re.search(r"PRECACHE = \[(.*?)\];", sw, re.S).group(1))
+        self.assertIn("data/neerkatti_data.js", files)
+        for f in files:
+            self.assertTrue((APP / (f if f != "./" else "index.html")).is_file(), f)
+        manifest = json.loads(read("docs/app/manifest.webmanifest"))
+        for icon in manifest["icons"]:
+            self.assertTrue((APP / icon["src"]).is_file(), icon["src"])
 
     def test_local_files_exist(self):
         for rel in ("docs/app/index.html", "docs/index.html"):

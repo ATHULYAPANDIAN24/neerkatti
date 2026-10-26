@@ -8,6 +8,7 @@ the app needs as static files:
 
 Usage:  .venv/Scripts/python analysis/app_assets.py
 Output: docs/app/data/ (images, patches.geojson, neerkatti_data.js)
+Then run patch_details.py, which adds zone or village names, AI confidence and close-ups for every patch.
 """
 import datetime
 import io
@@ -15,18 +16,18 @@ import json
 import math
 import os
 import pathlib
-import re
 import time
 import urllib.request
 
 import ee
 from PIL import Image, ImageEnhance
 
+from osm_places import load_cache, place_name, save_cache
+
 PROJECT = os.environ.get("EE_PROJECT", "dexathon-athulya")  # set EE_PROJECT to your own Earth Engine Cloud project
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 OUT = ROOT / "docs" / "app" / "data"
 OUT.mkdir(parents=True, exist_ok=True)
-PLACES_CACHE = ROOT / "outputs" / "places.json"
 
 ee.Initialize(project=PROJECT)
 
@@ -135,24 +136,6 @@ def metres(lon1, lat1, lon2, lat2):
     return math.hypot(dx, (lat2 - lat1) * 110570)
 
 
-def place_name(lon, lat, cache):
-    """Area name (suburb level only, never a building or owner) from OSM Nominatim."""
-    key = f"{lat:.5f},{lon:.5f}"
-    if key not in cache:
-        url = ("https://nominatim.openstreetmap.org/reverse?format=jsonv2&zoom=14"
-               f"&lat={lat:.5f}&lon={lon:.5f}&accept-language=en")
-        req = urllib.request.Request(url, headers={
-            "User-Agent": "NEERKATTI/0.2 (DEXATHON 2026 student project; "
-                          "github.com/ATHULYAPANDIAN24/neerkatti)"})
-        addr = json.loads(urllib.request.urlopen(req, timeout=30).read()).get("address", {})
-        cache[key] = next((addr[k] for k in ("suburb", "village", "town", "city_district")
-                           if k in addr), None)
-        time.sleep(1.2)  # Nominatim allows one request per second
-    name = cache[key]
-    # Chennai's corporation zones come back as "Zone 14 Perungudi"
-    return re.sub(r"^Zone \d+ ", "", name) if name else None
-
-
 # 1. The v1 rule
 before, after = land_cover(BEFORE_YEAR), land_cover(AFTER_YEAR)
 after_prev = land_cover(AFTER_YEAR - 1)
@@ -172,7 +155,7 @@ vectors = vectors.map(lambda f: f.set({
 raw = vectors.sort("area_ha", False).getInfo()["features"]
 print(len(raw), "patches")
 
-cache = json.loads(PLACES_CACHE.read_text(encoding="utf-8")) if PLACES_CACHE.exists() else {}
+cache = load_cache()
 
 
 def rounded(coords):
@@ -204,7 +187,7 @@ for rank, f in enumerate(raw, 1):
     features.append({"type": "Feature", "properties": props,
                      "geometry": {"type": f["geometry"]["type"],
                                   "coordinates": rounded(f["geometry"]["coordinates"])}})
-PLACES_CACHE.write_text(json.dumps(cache, indent=2, ensure_ascii=False), encoding="utf-8")
+save_cache(cache)
 
 # 3. Numbers for the side panel
 stats = ee.Dictionary({
