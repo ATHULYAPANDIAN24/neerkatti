@@ -75,6 +75,67 @@
     return Math.round(l).toLocaleString('en-IN') + ' litres';
   }
 
+  // ---- ask the AI about any spot: read the label images the map already shows ----------
+  // The label images cover `box` ([west, south, east, north]) and are stretched to Web
+  // Mercator (analysis/web_images.py). Which pixel of a `size` = [w, h] image is at lat, lon?
+  function mercY(lat) { return Math.log(Math.tan(Math.PI / 4 + lat * Math.PI / 360)); }
+  function pixelAt(box, size, lat, lon) {
+    if (lon < box[0] || lon > box[2] || lat < box[1] || lat > box[3]) return null;
+    var top = mercY(box[3]), span = top - mercY(box[1]);
+    return {
+      x: Math.min(size[0] - 1, Math.floor((lon - box[0]) / (box[2] - box[0]) * size[0])),
+      y: Math.min(size[1] - 1, Math.floor((top - mercY(lat)) / span * size[1]))
+    };
+  }
+  // The corners of that pixel, [[south, west], [north, east]], to outline it on the map
+  function pixelBounds(box, size, x, y) {
+    var top = mercY(box[3]), span = top - mercY(box[1]);
+    function lat(py) { var m = top - py / size[1] * span; return (2 * Math.atan(Math.exp(m)) - Math.PI / 2) * 180 / Math.PI; }
+    var west = box[0] + x / size[0] * (box[2] - box[0]), east = box[0] + (x + 1) / size[0] * (box[2] - box[0]);
+    return [[lat(y + 1), west], [lat(y), east]];
+  }
+  // The label whose colour this pixel has (the label images are lossless, one colour
+  // per label): its index in `labels` ([{name, color: '#419bdf'}]), 'cloud' for white
+  // (no label: under cloud that day), or -1 for anything else
+  function labelOf(rgb, labels) {
+    if (rgb[0] === 255 && rgb[1] === 255 && rgb[2] === 255) return 'cloud';
+    for (var i = 0; i < labels.length; i++) {
+      var c = parseInt(labels[i].color.slice(1), 16);
+      if (Math.abs((c >> 16) - rgb[0]) + Math.abs(((c >> 8) & 255) - rgb[1]) + Math.abs((c & 255) - rgb[2]) <= 6) return i;
+    }
+    return -1;
+  }
+  // What the change rule makes of one spot, from its label name in each dry season
+  // ({'2018': 'water', … '2026': 'buildings'}): the rule's label test is water or marsh
+  // in 2018 and buildings in both 2025 and 2026. `since` is the first season from which
+  // it is buildings every season through 2026 (as in analysis/year_by_year.py).
+  function spotVerdict(byYear, first, last) {
+    var wet = function (n) { return n === 'water' || n === 'marsh'; };
+    var a = byYear[String(first)], z = byYear[String(last)], z1 = byYear[String(last - 1)];
+    var since = null;
+    for (var y = last; y >= first && byYear[String(y)] === 'buildings'; y--) since = y;
+    if (!wet(a)) return { kind: 'dry', since: since };
+    if (z === 'buildings' && z1 === 'buildings') return { kind: 'passes', since: since };
+    if (wet(z)) return { kind: 'wet', since: null };
+    return { kind: 'changed', since: since };
+  }
+
+  // Is lat, lon inside a GeoJSON Polygon or MultiPolygon (holes respected)? Ray casting.
+  function inRing(lat, lon, ring) {
+    var inside = false;
+    for (var i = 0, j = ring.length - 1; i < ring.length; j = i++) {
+      var xi = ring[i][0], yi = ring[i][1], xj = ring[j][0], yj = ring[j][1];
+      if ((yi > lat) !== (yj > lat) && lon < (xj - xi) * (lat - yi) / (yj - yi) + xi) inside = !inside;
+    }
+    return inside;
+  }
+  function inPolygon(lat, lon, geometry) {
+    var polys = geometry.type === 'Polygon' ? [geometry.coordinates] : geometry.type === 'MultiPolygon' ? geometry.coordinates : [];
+    return polys.some(function (rings) {
+      return inRing(lat, lon, rings[0]) && !rings.slice(1).some(function (hole) { return inRing(lat, lon, hole); });
+    });
+  }
+
   // ---- keeping marks apart on screen ------------------------------------------
   function overlaps(a, b) { return a[0] < b[2] && a[2] > b[0] && a[1] < b[3] && a[3] > b[1]; }
 
@@ -137,6 +198,7 @@
     distance: distance, formatDistance: formatDistance, weakest: weakest, sortPatches: sortPatches,
     nameOf: nameOf, byArea: byArea, builtFrom: builtFrom,
     marshStatus: marshStatus, storage: storage, indianLitres: indianLitres,
+    pixelAt: pixelAt, pixelBounds: pixelBounds, labelOf: labelOf, spotVerdict: spotVerdict, inPolygon: inPolygon,
     overlaps: overlaps, spread: spread, freeSpot: freeSpot, readHash: readHash, hashFor: hashFor
   };
 });

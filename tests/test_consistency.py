@@ -310,6 +310,27 @@ class StaticSite(unittest.TestCase):
         for icon in manifest["icons"]:
             self.assertTrue((APP / icon["src"]).is_file(), icon["src"])
 
+    def test_offline_copy_has_every_season(self):
+        # the year player and "ask the AI about any spot" work offline: every season's light photo and labels
+        sw = read("docs/app/sw.js")
+        seasons = re.findall(r"'([^']+)'", re.search(r"SEASONS = \[(.*?)\];", sw, re.S).group(1))
+        meta, _ = load_data_js()
+        self.assertEqual(seasons, [str(y) for y in meta["timeline_years"]] + ["monsoon"])
+        for key in seasons:
+            for name in (f"photo_{key}_light.webp", f"labels_{key}.webp"):
+                self.assertTrue((APP / "data" / name).is_file(), name)
+
+    def test_label_images_are_lossless_at_the_map_shape(self):
+        # "ask the AI about any spot" reads a label from the exact colour of one pixel,
+        # so the label images must stay lossless (VP8L) and all the same size
+        sizes = set()
+        for path in sorted((APP / "data").glob("labels_*.webp")):
+            head = path.read_bytes()[:25]
+            self.assertEqual((head[:4], head[8:12], head[12:16]), (b"RIFF", b"WEBP", b"VP8L"), path.name)
+            bits = int.from_bytes(head[21:25], "little")
+            sizes.add((1 + (bits & 0x3FFF), 1 + ((bits >> 14) & 0x3FFF)))
+        self.assertEqual(sizes, {(1039, 1540)})
+
     def test_local_files_exist(self):
         for rel in ("docs/app/index.html", "docs/index.html"):
             html = read(rel)

@@ -2,7 +2,7 @@
 // opened, so it still works with no connection (a venue with poor Wi-Fi, say).
 // Online, every request still goes to the network first, so a new version shows
 // at once; the saved copy is only the fallback. tests/ checks the list below.
-var VERSION = 'neerkatti-r2-4';
+var VERSION = 'neerkatti-r2-5';
 var SHELL = VERSION + '-shell';
 var TILES = VERSION + '-tiles';
 var MAX_TILES = 400;
@@ -14,9 +14,20 @@ var PRECACHE = [
   'data/photo_2018.webp', 'data/photo_2026.webp', 'data/labels_2018.webp', 'data/labels_2026.webp',
   'icons/icon-192.png'
 ];
+// Every season's light photo and AI labels, so the year player also works offline.
+// Saved after the files above, and a missing one does not stop the offline copy.
+var SEASONS = ['2018', '2019', '2020', '2021', '2022', '2023', '2024', '2025', '2026', 'monsoon'];
+var LATER = [];
+SEASONS.forEach(function (k) { LATER.push('data/photo_' + k + '_light.webp', 'data/labels_' + k + '.webp'); });
 
 self.addEventListener('install', function (event) {
-  event.waitUntil(caches.open(SHELL).then(function (c) { return c.addAll(PRECACHE); }).then(function () { return self.skipWaiting(); }));
+  event.waitUntil(caches.open(SHELL).then(function (c) {
+    return c.addAll(PRECACHE).then(function () {
+      return Promise.all(LATER.map(function (url) {
+        return c.match(url).then(function (have) { return have || c.add(url).catch(function () {}); });
+      }));
+    });
+  }).then(function () { return self.skipWaiting(); }));
 });
 
 self.addEventListener('activate', function (event) {

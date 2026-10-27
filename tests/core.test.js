@@ -114,3 +114,55 @@ test('storage: hectares times depth, in Indian units', () => {
   assert.equal(core.indianLitres(12345), '12,345 litres');
   assert.equal(core.indianLitres(2.81e9), '281 crore litres');
 });
+
+// ---- ask the AI about any spot ----------------------------------------------------
+const meta = window.NEERKATTI.meta;
+const SIZE = [1039, 1540];   // the label images as the map shows them (analysis/web_images.py)
+
+test('pixelAt: the corners of the study area are the corners of the image', () => {
+  const [w, s, e, n] = meta.box;
+  assert.deepEqual(core.pixelAt(meta.box, SIZE, n, w), { x: 0, y: 0 });
+  assert.deepEqual(core.pixelAt(meta.box, SIZE, s, e), { x: SIZE[0] - 1, y: SIZE[1] - 1 });
+  assert.equal(core.pixelAt(meta.box, SIZE, n + 0.001, w), null);
+  assert.equal(core.pixelAt(meta.box, SIZE, s, e + 0.001), null);
+  assert.equal(core.pixelAt(meta.box, SIZE, (s + n) / 2, (w + e) / 2).x, Math.floor(SIZE[0] / 2));
+});
+
+test('pixelBounds outlines the very pixel pixelAt picked', () => {
+  for (const [x, y] of [[0, 0], [519, 651], [1038, 1539], [687, 327]]) {
+    const [[south, west], [north, east]] = core.pixelBounds(meta.box, SIZE, x, y);
+    assert.ok(north > south && east > west);
+    assert.deepEqual(core.pixelAt(meta.box, SIZE, (south + north) / 2, (west + east) / 2), { x, y });
+  }
+});
+
+test('labelOf reads every label colour, white as cloud, anything else as unknown', () => {
+  meta.labels.forEach((l, i) => {
+    const c = parseInt(l.color.slice(1), 16);
+    assert.equal(core.labelOf([c >> 16, (c >> 8) & 255, c & 255], meta.labels), i, l.name);
+  });
+  assert.equal(core.labelOf([255, 255, 255], meta.labels), 'cloud');
+  assert.equal(core.labelOf([255, 0, 255], meta.labels), -1);
+});
+
+test('spotVerdict applies the label test of the rule', () => {
+  const seasons = (list) => Object.fromEntries(list.map((n, i) => [String(2018 + i), n]));
+  const B = 'buildings', W = 'water', M = 'marsh', T = 'trees';
+  assert.deepEqual(core.spotVerdict(seasons([W, W, W, W, W, W, 'crops', B, B]), 2018, 2026), { kind: 'passes', since: 2025 });
+  assert.deepEqual(core.spotVerdict(seasons([M, M, M, B, B, B, B, B, B]), 2018, 2026), { kind: 'passes', since: 2021 });
+  assert.equal(core.spotVerdict(seasons([M, M, M, M, M, M, M, M, M]), 2018, 2026).kind, 'wet');
+  assert.equal(core.spotVerdict(seasons([W, W, W, W, W, W, W, B, T]), 2018, 2026).kind, 'changed');
+  assert.equal(core.spotVerdict(seasons([W, W, W, W, W, W, W, T, B]), 2018, 2026).kind, 'changed');
+  assert.equal(core.spotVerdict(seasons([B, B, B, B, B, B, B, B, B]), 2018, 2026).kind, 'dry');
+});
+
+test('inPolygon respects holes, and the tour spot lies on patch 1', () => {
+  const square = { type: 'Polygon', coordinates: [[[0, 0], [4, 0], [4, 4], [0, 4], [0, 0]], [[1, 1], [3, 1], [3, 3], [1, 3], [1, 1]]] };
+  assert.equal(core.inPolygon(0.5, 0.5, square), true);
+  assert.equal(core.inPolygon(2, 2, square), false);
+  assert.equal(core.inPolygon(5, 5, square), false);
+  const app = fs.readFileSync(path.join(__dirname, '..', 'docs', 'app', 'app.js'), 'utf8');
+  const [lat, lon] = JSON.parse(/var DEMO_SPOT = (\[[^\]]+\]);/.exec(app)[1]);
+  const hits = window.NEERKATTI.patches.features.filter((f) => core.inPolygon(lat, lon, f.geometry)).map((f) => f.properties.rank);
+  assert.deepEqual(hits, [1]);
+});

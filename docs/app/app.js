@@ -373,6 +373,8 @@
     return (view === 'labels' ? 'AI land labels, ' : 'Sentinel-2 satellite image, ') + keyLong(key);
   }
   var slots = {};
+  var noFull = {};       // seasons whose full photo failed (offline, say): their light copy stays
+  var imageError = '';   // the season whose image is missing, while its note is up
   function slot(view, pane) {
     var k = view + '-' + pane;
     if (!slots[k]) slots[k] = { view: view, pane: pane, key: null, layer: null, ready: false, full: false };
@@ -382,46 +384,90 @@
     var full = src('photo', s.key, true);
     if (s.layer._url !== full) s.layer.setUrl(full);
   }
+  function loaded(s) {
+    s.ready = true;
+    s.failed = false;
+    s.layer.setOpacity(1);
+    if (s.full) upgrade(s);
+    checkLoaded();
+  }
+  function failed(s) {
+    // a full photo that fails falls back to its light copy, which is already on screen or saved
+    if (s.view === 'photo' && s.layer._url === src('photo', s.key, true)) {
+      noFull[s.key] = true;
+      s.full = false;
+      s.layer.setUrl(src('photo', s.key, false));
+      return;
+    }
+    // hide the broken picture (the street map shows through) and say which season is missing
+    s.failed = true;
+    s.layer.setOpacity(0);
+    imageError = s.key;
+    setNote((s.view === 'labels' ? 'The AI labels for ' : 'The satellite image for ') + keyLong(s.key) +
+      (navigator.onLine ? ' did not load. Check the connection; it retries when you change season.'
+        : ' are not saved on this device yet. They load when you are back online.'), true);
+  }
   function point(s, key, full) {
-    s.full = full && s.view === 'photo';
-    if (s.key === key) { if (s.full && s.ready) upgrade(s); return; }
+    s.full = full && s.view === 'photo' && !noFull[key];
+    if (s.key === key && !s.failed) { if (s.full && s.ready) upgrade(s); return; }
     s.key = key;
     s.ready = false;
-    var url = src(s.view, key, false);
+    // a full photo the player has already fetched goes straight up; otherwise the light copy first
+    var url = src(s.view, key, s.full && preloaded[src('photo', key, true)] === 'ok');
     if (!s.layer) {
       s.layer = L.imageOverlay(url, box, { pane: s.pane, alt: altFor(s.view, key), attribution: imgAttr, className: s.view === 'labels' ? 'dw-img' : '' });
-      s.layer.on('load', function () { s.ready = true; if (s.full) upgrade(s); checkLoaded(); });
-      s.layer.on('error', function () { setNote('A satellite image did not load. Check the connection and reload the page.', true); });
+      s.layer.on('load', function () { loaded(s); });
+      s.layer.on('error', function () { failed(s); });
     } else {
       s.layer.setUrl(url);
       if (s.layer.getElement()) s.layer.getElement().alt = altFor(s.view, key);
     }
   }
+  // back online: fetch whatever failed, and try the full photos again
+  window.addEventListener('online', function () {
+    noFull = {};
+    Object.keys(slots).forEach(function (k) {
+      var s = slots[k];
+      if (s.failed && s.layer) { s.failed = false; s.layer.setUrl(src(s.view, s.key, false)); }
+    });
+    applyLayers();
+  });
   function shown() {
     return Object.keys(slots).map(function (k) { return slots[k]; }).filter(function (s) { return s.layer && map.hasLayer(s.layer); });
   }
   // a small status line until the images on screen have loaded
   function checkLoaded() {
+    // the missing-image note goes once no image on screen is missing
+    if (imageError && !shown().some(function (s) { return s.failed; })) { imageError = ''; setNote(''); }
     if (note.classList.contains('error') || playing) return;
     var done = shown().every(function (s) { return s.ready; });
     setNote(done ? '' : (state.view === 'labels' ? 'Loading AI labels…' : 'Loading satellite images…'));
     if (done) { connection(); addBasemap(); }
   }
-  // the year player shows every season in turn, so fetch their light copies first
+  // The year player shows every season in turn, so it fetches their images first:
+  // the light copies, or the full ones when `full` (zoomed in on one patch).
+  // preloaded[url] is 'loading', 'ok' or 'error'.
   var preloaded = {};
-  function preload(view, done) {
-    var keys = YEARS.filter(function (y) { return !preloaded[view + y]; });
-    var left = keys.length;
-    if (!left) { done(); return; }
-    var timer = setTimeout(done, 4000);   // a slow connection plays anyway; the old season stays until the next arrives
-    keys.forEach(function (y) {
+  function preload(view, full, done) {
+    var urls = YEARS.map(function (y) { return src(view, y, full); });
+    var left = 0, called = false;
+    function finish() { if (!called) { called = true; done(); } }
+    urls.forEach(function (url) {
+      if (preloaded[url] === 'ok' || preloaded[url] === 'loading') return;
+      left++;
+      preloaded[url] = 'loading';
       var img = new Image();
-      img.onload = img.onerror = function () {
-        preloaded[view + y] = true;
-        if (--left === 0) { clearTimeout(timer); done(); }
-      };
-      img.src = src(view, y, false);
+      img.onload = function () { preloaded[url] = 'ok'; if (--left === 0) finish(); };
+      img.onerror = function () { preloaded[url] = 'error'; if (--left === 0) finish(); };
+      img.src = url;
     });
+    // start once the first season is in; the player waits for each later one in turn (tick)
+    var first = urls[YEARS.indexOf(state.year)] || urls[0];
+    (function wait(t) {
+      if (called) return;
+      if (preloaded[first] !== 'loading' || t > 8000) finish();
+      else setTimeout(function () { wait(t + 150); }, 150);
+    })(0);
   }
 
   // ---- compare two seasons -------------------------------------------------
@@ -514,45 +560,73 @@
   $('tb-ticks').innerHTML = YEARS.map(function (y) { return '<span>’' + y.slice(2) + '</span>'; }).join('');
   var playBtn = $('play');
   var playing = false, playTimer = null;
+  var playFull = false;    // zoomed in on one patch: play the full images, the light ones would be a blur
+  var scrubbing = false;   // dragging the year slider: light copies until it is let go
+  var onSeason = null;     // called with each season the player shows (the open popup's bars follow it)
   function yearText() {
     var y = state.year;
     $('year-out').innerHTML = '<b>' + y + '</b><span>' + ha1(builtBy[y]) + ' of ' + meta.lost_ha + ' ha built over</span>';
     range.value = y;
     range.setAttribute('aria-valuetext', y + ': ' + ha1(builtBy[y]) + ' of ' + meta.lost_ha + ' hectares built over');
   }
-  function setPlaying(on) {
+  // opts.full: play the full images; opts.from: the season to start at
+  function setPlaying(on, opts) {
+    opts = opts || {};
+    var was = playing;
     playing = on;
     clearTimeout(playTimer);
     playBtn.classList.toggle('on', on);
     playBtn.setAttribute('aria-label', on ? 'Pause' : 'Play the dry seasons ' + FIRST + ' to ' + LAST);
-    if (!on) { applyLayers(); return; }   // stopped: the full image of this season
-    if (state.year === LAST) state.year = FIRST;
-    preload(state.view, function () {
+    if (!on) {
+      playFull = false;
+      if (was && !imageError) { setNote(''); checkLoaded(); }
+      applyLayers();   // stopped: the full image of this season
+      if (was && onSeason) onSeason(null);
+      return;
+    }
+    playFull = !!opts.full;
+    if (opts.from) state.year = opts.from;
+    else if (state.year === LAST) state.year = FIRST;
+    setNote('Loading the seasons…');
+    preload(state.view, playFull, function () {
       if (!playing) return;
+      setNote('');
       showSeason(state.year);
       tick();
     });
   }
-  function tick() {
+  // the next season is shown only once its image is in, so the year on screen always
+  // matches the picture; on a slow connection the player waits (and says so)
+  function tick(waited) {
     playTimer = setTimeout(function () {
       if (!playing) return;
       if (state.year === LAST) { setPlaying(false); return; }
-      showSeason(String(+state.year + 1));
+      var next = String(+state.year + 1);
+      var status = preloaded[src(state.view, next, playFull)];
+      if (status === 'loading' && (waited || 0) < 10000) {
+        setNote('Loading ' + next + '…');
+        tick((waited || 0) + 300);
+        return;
+      }
+      setNote(status === 'error' ? (navigator.onLine ? 'The ' + next + ' image did not load.' : 'The ' + next + ' image is not saved on this device yet.') : '');
+      showSeason(next);
       tick();
-    }, calm.matches ? 1600 : 1100);
+    }, waited ? 300 : calm.matches ? 1600 : 1100);
   }
   function showSeason(y) {
     state.year = y;
     if (state.mode !== 'single') { state.mode = 'single'; check('mode', 'single'); }
     applyLayers();
     writeHash();
+    if (playing && onSeason) onSeason(y);
   }
   playBtn.addEventListener('click', function () {
     endTour();
     if (state.mode !== 'single') showSeason(state.year);
     setPlaying(!playing);
   });
-  range.addEventListener('input', function () { endTour(); setPlaying(false); showSeason(range.value); });
+  range.addEventListener('input', function () { endTour(); setPlaying(false); scrubbing = true; showSeason(range.value); });
+  range.addEventListener('change', function () { scrubbing = false; applyLayers(); });
 
   // ---- legend ---------------------------------------------------------------
   // Starts folded on phones, where it would cover a third of the map;
@@ -634,7 +708,7 @@
     var since = core.builtFrom(p);
     var cols = YEARS.map(function (y, i) {
       var wet = p.wet_by_year[i], built = p.built_by_year[i], other = Math.max(0, 1 - wet - built);
-      return '<span class="tl-col' + (+y === since ? ' since' : '') + '" title="' + y + ': ' + pct(built) + ' buildings, ' + pct(wet) + ' water or marsh">' +
+      return '<span class="tl-col' + (+y === since ? ' since' : '') + '" data-year="' + y + '" title="' + y + ': ' + pct(built) + ' buildings, ' + pct(wet) + ' water or marsh">' +
         '<span class="tl-bar"><i class="w" style="height:' + pct(wet) + '"></i><i class="o" style="height:' + pct(other) + '"></i>' +
         '<i class="b" style="height:' + pct(built) + '"></i></span><span class="tl-y">’' + y.slice(2) + '</span></span>';
     }).join('');
@@ -642,7 +716,10 @@
     return '<div class="tl"><div class="tl-head"><span>Year by year</span><b>' +
       (since >= 2025 ? 'Built over in 2025 and 2026' : 'Built over every season since ' + since) + '</b></div>' +
       '<div class="tl-cols" role="img" aria-label="Share of the patch the AI labels buildings each dry season: ' + said + '">' + cols + '</div>' +
-      '<div class="tl-key" aria-hidden="true"><span><i class="w"></i>water or marsh</span><span><i class="o"></i>other</span><span><i class="b"></i>buildings</span></div></div>';
+      '<div class="tl-key" aria-hidden="true"><span><i class="w"></i>water or marsh</span><span><i class="o"></i>other</span><span><i class="b"></i>buildings</span></div>' +
+      '<div class="tl-act"><button type="button" class="tl-play" data-rank="' + p.rank + '" aria-label="Watch this patch season by season, ' + FIRST + ' to ' + LAST + '">' +
+      '<svg viewBox="0 0 24 24" aria-hidden="true"><path class="i-play" d="M8 5v14l11-7z"/><path class="i-pause" d="M7 5h4v14H7zM13 5h4v14h-4z"/></svg>' +
+      '<span>Watch it ' + FIRST + '–' + LAST + '</span></button><span class="tl-now" aria-live="polite"></span></div></div>';
   }
   // How sure the AI was: the three probabilities, the weakest of which sets the level
   function confHtml(p) {
@@ -836,12 +913,13 @@
   }
   // Run `then` once the map has arrived. A resize during the flight (the web font
   // arriving and changing the toolbar's height, say) also ends with a moveend, so
-  // check where the map is rather than trusting the first one.
+  // check where the map is rather than trusting the first one. After a pan the map
+  // reports its centre to the nearest pixel, so "there" means within 2 px.
   var arriving = null;
   function whenThere(to, then) {
     if (arriving) map.off('moveend', arriving);
     arriving = function () {
-      if (Math.abs(map.getZoom() - to.zoom) > 0.01 || map.distance(map.getCenter(), to.center) > 5) return;
+      if (Math.abs(map.getZoom() - to.zoom) > 0.01 || map.project(map.getCenter()).distanceTo(map.project(to.center)) > 2) return;
       map.off('moveend', arriving);
       arriving = null;
       then();
@@ -872,12 +950,215 @@
       var noPopup = opts.popup === false;
       // room above the patch for the popup and its tip
       var to = flyInto(b, noPopup ? 50 : popupRoom() + 40, opts.padBottom || 30);
-      whenThere(to, function () { if (selected === hit && !noPopup) popup.openOn(map); });
+      whenThere(to, function () {
+        if (selected !== hit) return;
+        if (!noPopup) popup.openOn(map);
+        if (opts.then) opts.then();
+      });
     } else {
       popup.openOn(map);
+      if (opts.then) opts.then();
     }
     writeHash();
   }
+
+  // ---- watch one patch: zoom in and play its seasons, the popup's bars following --------
+  var watching = null;   // the patch being watched
+  function watchSeason(y) {
+    var hit = watching && byRank[watching];
+    if (!hit) return;
+    var p = hit.feature.properties, el = popup.getElement();
+    if (el) {
+      el.querySelectorAll('.tl-col').forEach(function (c) { c.classList.toggle('now', c.dataset.year === y); });
+      var btn = el.querySelector('.tl-play');
+      if (btn) { btn.classList.toggle('on', !!y); btn.setAttribute('aria-label', y ? 'Pause' : 'Watch this patch season by season, ' + FIRST + ' to ' + LAST); }
+      var i = YEARS.indexOf(y), now = el.querySelector('.tl-now');
+      if (now) now.textContent = y ? y + ': ' + pct(p.built_by_year[i]) + ' buildings, ' + pct(p.wet_by_year[i]) + ' water or marsh' : '';
+    }
+    if (y) hit.layer.setStyle({ fillOpacity: 0 });   // outline only, so the ground shows through
+    else {
+      if (selected === hit) hit.layer.setStyle(ON);
+      unwatch();
+    }
+  }
+  function unwatch() {
+    watching = null;
+    onSeason = null;
+    var el = popup.getElement();
+    if (el && L.DomUtil.hasClass(el, 'watching')) { L.DomUtil.removeClass(el, 'watching'); if (map.hasLayer(popup)) popup.update(); }
+  }
+  // the popup folds down to its season bars and the map zooms in close under it, then the seasons play
+  function watchPatch(rank) {
+    if (playing && watching === rank) { setPlaying(false); return; }
+    var hit = byRank[rank];
+    function start() {
+      watching = rank;
+      onSeason = watchSeason;
+      var el = popup.getElement();
+      L.DomUtil.addClass(el, 'watching');
+      popup.update();
+      var to = flyInto(hit.layer.getBounds(), el.offsetHeight + 30, 30);
+      whenThere(to, function () { if (watching === rank) setPlaying(true, { full: true, from: FIRST }); });
+    }
+    if (selected === hit && map.hasLayer(popup)) start();
+    else select(rank, { fly: true, then: start });
+  }
+  // one listener on the popup itself: its content is redrawn (when the close-up arrives, say), its box is not
+  var popupWired = false;
+  map.on('popupopen', function (e) {
+    if (e.popup !== popup || popupWired) return;
+    popupWired = true;
+    popup.getElement().addEventListener('click', function (ev) {
+      var btn = ev.target.closest('.tl-play');
+      if (!btn) return;
+      // the popup is redrawn next, which would leave the map unable to tell this click came from inside it
+      ev.stopPropagation();
+      endTour();
+      setTimeout(function () { watchPatch(+btn.dataset.rank); }, 0);
+    });
+  });
+  // closing the popup stops the watching (the selection is cleared just before, so every patch is restyled)
+  map.on('popupclose', function (e) {
+    if (e.popup === popup && watching) { unwatch(); if (playing) setPlaying(false); }
+  });
+
+  // ---- ask the AI about any spot -----------------------------------------------------
+  // A tap anywhere off the patches reads the AI label images the map already shows
+  // (one per dry season, and the day after the floods) at that spot: about one 10 m
+  // square. No server: the pixels are read in the browser.
+  var SPOT_LABELS = meta.labels.concat([{ name: 'snow & ice', color: '#b39fe1' }]);   // a mislabel here, but name it
+  var SPOT_KEYS = YEARS.concat(['monsoon']);
+  var labelImgs = {};   // key -> Promise of a decoded image
+  var spotCanvas = null;
+  function labelImg(key) {
+    if (!labelImgs[key]) {
+      labelImgs[key] = new Promise(function (resolve, reject) {
+        var img = new Image();
+        img.onload = function () { resolve(img); };
+        img.onerror = function () { delete labelImgs[key]; reject(new Error(key)); };
+        img.src = src('labels', key);
+      });
+    }
+    return labelImgs[key];
+  }
+  function readPixel(img, x, y) {
+    if (!spotCanvas) { spotCanvas = document.createElement('canvas'); spotCanvas.width = spotCanvas.height = 1; }
+    var ctx = spotCanvas.getContext('2d', { willReadFrequently: true });
+    ctx.imageSmoothingEnabled = false;
+    ctx.clearRect(0, 0, 1, 1);
+    ctx.drawImage(img, x, y, 1, 1, 0, 0, 1, 1);
+    return ctx.getImageData(0, 0, 1, 1).data;
+  }
+  var spotPopup = L.popup({ autoPanPaddingTopLeft: [10, 10], autoPanPaddingBottomRight: [10, 48], className: 'spot-pop' });
+  var spotMark = null;
+  function spotName(i) { return i === 'cloud' ? 'cloud' : i < 0 ? 'unknown' : SPOT_LABELS[i].name; }
+  // the season strip: one coloured square per season, then a key for the colours it shows
+  function spotCells(names) {
+    var cells = SPOT_KEYS.map(function (k) {
+      var i = names['#' + k], color = i === 'cloud' ? '#ffffff' : i < 0 ? 'transparent' : SPOT_LABELS[i].color;
+      return '<span class="sp-cell' + (k === 'monsoon' ? ' flood' : '') + '" title="' + keyName(k) + ': ' + esc(names[k]) + '">' +
+        '<i style="background:' + color + '"></i><span>' + (k === 'monsoon' ? 'Dec' : '’' + k.slice(2)) + '</span></span>';
+    }).join('');
+    // a key for the colours this spot shows
+    var seen = [];
+    SPOT_KEYS.forEach(function (k) { var i = names['#' + k]; if (seen.indexOf(i) < 0) seen.push(i); });
+    var key = seen.map(function (i) {
+      var color = i === 'cloud' ? '#ffffff' : i < 0 ? 'transparent' : SPOT_LABELS[i].color;
+      return '<span><i style="background:' + color + '"></i>' + esc(spotName(i)) + '</span>';
+    }).join('');
+    var said = SPOT_KEYS.map(function (k) { return (k === 'monsoon' ? floodDay : k) + ' ' + names[k]; }).join(', ');
+    return '<div class="sp-cells" role="img" aria-label="AI label each season: ' + esc(said) + '">' + cells + '</div>' +
+      '<div class="sp-key" aria-hidden="true">' + key + '</div>';
+  }
+  function spotHtml(at, names) {
+    var byYear = {};
+    YEARS.forEach(function (y) { byYear[y] = names[y]; });
+    var v = core.spotVerdict(byYear, +FIRST, +LAST);
+    var inPatch = D.patches.features.filter(function (f) { return core.inPolygon(at.lat, at.lng, f.geometry); })[0];
+    var rank = inPatch && inPatch.properties.rank;
+    var verdict = {
+      passes: '<b>Water or marsh in ' + FIRST + ', buildings in ' + (+LAST - 1) + ' and ' + LAST + '</b>' +
+        (v.since && v.since < +LAST - 1 ? ', and every season since ' + v.since : '') + '. That is the change the rule looks for. ' +
+        (rank ? 'This spot is part of <b>flagged patch #' + rank + '</b>.'
+          : 'The map flags a spot only when it is also off the outer 20&nbsp;m rim of the 2018 water, inside a group of at least 10 such squares.'),
+      wet: '<b>Still ' + esc(names[LAST]) + ' in ' + LAST + '.</b> Water or marsh then and now: no change to flag.',
+      changed: '<b>Water or marsh in ' + FIRST + ', ' + esc(names[LAST]) + ' in ' + LAST + '.</b> It changed, but it is not buildings in both ' +
+        (+LAST - 1) + ' and ' + LAST + ', so the rule does not flag it.',
+      dry: '<b>' + cap(esc(names[FIRST])) + ' in ' + FIRST + ', not water or marsh</b>, so the rule does not look at it.'
+    }[v.kind];
+    return '<div class="pop sp">' +
+      '<div class="pop-title">What the AI saw on this spot</div>' +
+      '<p class="sp-sub">About one 10&nbsp;m square, at ' + at.lat.toFixed(5) + ', ' + at.lng.toFixed(5) + '. The most common Dynamic World label each dry season.</p>' +
+      spotCells(names) +
+      '<div class="sp-when">’18–’26: Feb–May of each year · Dec: ' + floodDay + ', after the floods</div>' +
+      '<p class="sp-verdict ' + v.kind + '">' + verdict + '</p>' +
+      (rank ? '<p class="sp-open"><button type="button" class="btn ghost sp-patch" data-rank="' + rank + '">Open patch #' + rank + '</button></p>' : '') +
+      '<div class="pop-foot"><span class="sp-note">Labels can flicker from season to season.</span>' +
+      '<a href="https://www.google.com/maps/@' + at.lat.toFixed(5) + ',' + at.lng.toFixed(5) + ',300m/data=!3m1!1e3" target="_blank" rel="noopener">Google Maps (satellite) →</a></div></div>';
+  }
+  // Every season's label at `at`: names[key] ('water' …) and names['#' + key] (its index),
+  // and the 10 m cell read; null if no label image could be loaded
+  function readSpot(at) {
+    return Promise.all(SPOT_KEYS.map(function (k) {
+      return labelImg(k).then(function (img) { return img; }, function () { return null; });
+    })).then(function (imgs) {
+      var names = {}, cell = null;
+      imgs.forEach(function (img, n) {
+        var k = SPOT_KEYS[n];
+        if (!img) { names[k] = 'not loaded'; names['#' + k] = -1; return; }
+        var size = [img.naturalWidth, img.naturalHeight], px = core.pixelAt(meta.box, size, at.lat, at.lng);
+        var i = core.labelOf(readPixel(img, px.x, px.y), SPOT_LABELS);
+        names['#' + k] = i;
+        names[k] = spotName(i);
+        cell = cell || core.pixelBounds(meta.box, size, px.x, px.y);
+      });
+      return cell ? { names: names, cell: cell } : null;
+    });
+  }
+  function markSpot(cell) {
+    if (!spotMark) spotMark = L.rectangle(cell, { color: '#FFD400', weight: 2, fill: false, interactive: false, pane: 'marsh' });
+    else spotMark.setBounds(cell);
+    spotMark.addTo(map);
+  }
+  function askSpot(latlng, inTour) {
+    var at = L.latLng(latlng);
+    if (!box.contains(at)) { say('Tap inside the satellite image: that is the study area'); return; }
+    if (!inTour) endTour();
+    map.closePopup();
+    var width = narrow.matches ? 260 : 290;
+    spotPopup.options.maxWidth = spotPopup.options.minWidth = width;
+    spotPopup.setLatLng(at).setContent('<div class="pop sp"><div class="pop-title">What the AI saw on this spot</div><p class="sp-sub">Reading the AI labels…</p></div>').openOn(map);
+    readSpot(at).then(function (spot) {
+      if (!map.hasLayer(spotPopup) || !spotPopup.getLatLng().equals(at)) return;   // another tap came first
+      if (!spot) {
+        spotPopup.setContent('<div class="pop sp"><div class="pop-title">What the AI saw on this spot</div><p class="sp-sub">The AI label images did not load. ' +
+          (navigator.onLine ? 'Check the connection and tap again.' : 'Open the map once while online to save them on this device.') + '</p></div>');
+        return;
+      }
+      spotPopup.setContent(spotHtml(at, spot.names));
+      markSpot(spot.cell);
+    });
+  }
+  // a tap that only closes a patch's popup does just that
+  var patchPopupWasOpen = false;
+  map.on('preclick', function () { patchPopupWasOpen = map.hasLayer(popup); });
+  map.on('click', function (e) { if (!patchPopupWasOpen) askSpot(e.latlng); });
+  var spotWired = false;
+  map.on('popupopen', function (e) {
+    if (e.popup !== spotPopup || spotWired) return;
+    spotWired = true;
+    spotPopup.getElement().addEventListener('click', function (ev) {
+      var btn = ev.target.closest('.sp-patch');
+      if (!btn) return;
+      ev.stopPropagation();   // the spot popup closes next; the map must not take this as its own click
+      setTimeout(function () { mapApi.pick(+btn.dataset.rank); }, 0);
+    });
+  });
+  map.on('popupclose', function (e) { if (e.popup === spotPopup && spotMark) map.removeLayer(spotMark); });
+  // the keyboard way: Enter on the map asks about the spot at its centre
+  container.addEventListener('keydown', function (e) {
+    if (e.target === container && e.key === 'Enter') { e.preventDefault(); askSpot(map.getCenter()); }
+  });
 
   // ---- the link that reopens a view ------------------------------------------
   function writeHash() {
@@ -910,7 +1191,7 @@
         var s = slot(v, pane);
         var key = v === state.view && sides[pane];
         if (key) {
-          point(s, key, !playing);
+          point(s, key, playFull || (!playing && !scrubbing));
           if (!map.hasLayer(s.layer)) s.layer.addTo(map);
         } else if (s.layer && map.hasLayer(s.layer)) {
           map.removeLayer(s.layer);
@@ -947,7 +1228,7 @@
   function setView(v) {
     state.view = v; check('view', v); applyLayers(); writeHash();
     if (v === 'labels') legend.setOpen(true);
-    if (playing) preload(v, function () {});
+    if (playing) preload(v, playFull, function () {});
   }
   function setPatches(on) {
     state.patches = on;
@@ -1057,7 +1338,9 @@
   var tourStep = -1;
   var marshNear = nearMarsh.length + ' of ' + all.length;
   // each step starts clean: no popup, and no patch left selected by step 4 (on a phone it has no popup to close)
-  function fresh() { map.closePopup(); clearSelection(); }
+  function fresh() { map.closePopup(); clearSelection(); if (spotMark) map.removeLayer(spotMark); }
+  // a square on patch #1 the AI saw as water from 2018 to 2023 and as buildings in 2025 and 2026
+  var DEMO_SPOT = [12.96236, 80.22955];
   var TOUR = [
     {
       title: 'Compare 2018 and 2026',
@@ -1075,9 +1358,32 @@
     },
     {
       title: 'See what the AI sees',
-      text: 'Dynamic World, an AI model, labels every 10 m square: blue is water, purple is marsh, grey is buildings. Where blue or purple turned grey and stayed grey in 2025 and 2026, we flag it in red.',
-      short: 'An AI model labels every 10 m square: blue water, purple marsh, grey buildings. Blue or purple that turned grey in 2025 and 2026 is flagged red.',
-      run: function () { setPlaying(false); fresh(); state.left = FIRST; state.right = LAST; setMode('compare'); setView('labels'); }
+      text: 'Dynamic World, an AI model, labels every 10 m square: blue is water, purple is marsh, grey is buildings. Tap any spot to see its label in every season, as here. Where blue or purple turned grey and stayed grey in 2025 and 2026, we flag it in red.',
+      short: 'An AI model labels every 10 m square: blue water, purple marsh, grey buildings. Tap any spot to see its label every season, as here.',
+      run: function () {
+        setPlaying(false); fresh(); state.left = FIRST; state.right = LAST; setMode('compare'); setView('labels');
+        // Close in, so the 10 m squares show. On a wide screen the spot sits low and to the right
+        // of this card, with its popup above it; on a phone this card would cover a popup, so
+        // the card itself shows the spot's seasons and the spot sits just above it.
+        var at = L.latLng(DEMO_SPOT), z = 15.5;
+        function flyToSpot(then) {
+          var size = map.getSize();
+          var dy = narrow.matches ? -(coach.offsetHeight + 20) / 2 : Math.min(size.y / 2 - 40, 150);
+          var dx = narrow.matches ? 0 : Math.min(size.x / 4, (coach.offsetWidth + 14) / 2);
+          var to = { center: map.unproject(map.project(at, z).subtract([dx, dy]), z), zoom: z };
+          map.flyTo(to.center, z, { duration: calm.matches ? 0 : 0.9 });
+          whenThere(to, then);
+        }
+        if (!narrow.matches) { flyToSpot(function () { if (tourStep === 2) askSpot(DEMO_SPOT, true); }); return; }
+        readSpot(at).then(function (spot) {
+          if (tourStep !== 2) return;
+          if (spot) {
+            $('coach-fig').innerHTML = '<div class="sp sp-coach">' + spotCells(spot.names) + '</div>';
+            markSpot(spot.cell);
+          }
+          flyToSpot(function () {});
+        });
+      }
     },
     {
       title: 'Open the biggest patch',
@@ -1104,7 +1410,47 @@
       run: function () { setMarsh(false); fresh(); compareFlood(); home(true); setTimeout(sweep, calm.matches ? 0 : 900); }
     }
   ];
-  function showStep(i) {
+  // The tour plays itself (Pause stops it; Next and Back still work). Each step stays up
+  // long enough to read, and the year-by-year step until the seasons have played.
+  var auto = false, autoTimer = null;
+  var autoBtn = $('coach-auto'), bar = $('coach-bar'), barFill = bar.firstChild;
+  function dwell(text) { return Math.max(7000, Math.min(10000, text.split(' ').length * 250)); }
+  function stepTime(i) {
+    var s = TOUR[i];
+    return dwell(narrow.matches ? s.short : s.text) + (i === 1 ? 3500 : 0);
+  }
+  function runBar(ms) {
+    barFill.style.transition = 'none';
+    barFill.style.width = '0';
+    void barFill.offsetWidth;   // restart the fill from empty
+    barFill.style.transition = 'width ' + ms + 'ms linear';
+    barFill.style.width = '100%';
+  }
+  function stopBar() {
+    barFill.style.width = getComputedStyle(barFill).width;
+    barFill.style.transition = 'none';
+  }
+  function scheduleNext(ms) {
+    clearTimeout(autoTimer);
+    runBar(ms);
+    var step = tourStep, t0 = Date.now();
+    (function wait() {
+      autoTimer = setTimeout(function () {
+        if (!auto || tourStep !== step) return;
+        if (playing && Date.now() - t0 < 25000) { wait(); return; }   // let the seasons finish
+        next(false);
+      }, Math.max(300, ms - (Date.now() - t0)));
+    })();
+  }
+  function setAuto(on) {
+    auto = on;
+    autoBtn.textContent = on ? 'Pause' : 'Auto-play';
+    autoBtn.setAttribute('aria-label', on ? 'Pause the tour' : 'Play the tour by itself');
+    bar.hidden = !on;
+    if (!on) { clearTimeout(autoTimer); stopBar(); }
+    else if (tourStep >= 0) scheduleNext(stepTime(tourStep));
+  }
+  function showStep(i, byHand) {
     tourStep = i;
     var s = TOUR[i];
     coach.hidden = false;
@@ -1114,33 +1460,41 @@
     $('coach-fig').innerHTML = s.figure && narrow.matches ? figureHtml(byRank[s.figure].feature.properties) : '';
     $('coach-back').hidden = i === 0;
     $('coach-next').textContent = i === TOUR.length - 1 ? 'Done' : 'Next';
+    autoBtn.hidden = false;
     s.run();
-    $('coach-title').focus({ preventScroll: true });
+    if (auto) scheduleNext(stepTime(i));
+    // playing by itself, the focus stays put (on Pause, say); stepping by hand, it moves to the new step
+    if (byHand || !auto) $('coach-title').focus({ preventScroll: true });
   }
-  function startTour() {
+  function next(byHand) {
+    if (tourStep >= TOUR.length - 1) {
+      endTour();
+      say('Tour done. Tap any patch, row or spot to explore.');
+    }
+    else showStep(tourStep + 1, byHand);
+  }
+  function startTour(withAuto) {
     closeIntro();
     showMap();
+    setAuto(withAuto !== false);
     showStep(0);
+    if (auto) autoBtn.focus({ preventScroll: true });
   }
   function endTour() {
     if (tourStep < 0) return;
     tourStep = -1;
     coach.hidden = true;
+    clearTimeout(autoTimer);
     stopSweep();
   }
-  $('coach-next').addEventListener('click', function () {
-    if (tourStep >= TOUR.length - 1) {
-      endTour();
-      say('Tour done. Tap any patch or row to explore.');
-    }
-    else showStep(tourStep + 1);
-  });
-  $('coach-back').addEventListener('click', function () { if (tourStep > 0) showStep(tourStep - 1); });
+  autoBtn.addEventListener('click', function () { setAuto(!auto); });
+  $('coach-next').addEventListener('click', function () { next(true); });
+  $('coach-back').addEventListener('click', function () { if (tourStep > 0) showStep(tourStep - 1, true); });
   $('coach-x').addEventListener('click', endTour);
   document.addEventListener('keydown', function (e) { if (e.key === 'Escape' && tourStep >= 0) endTour(); });
   L.DomEvent.disableClickPropagation(coach);
   L.DomEvent.disableScrollPropagation(coach);
-  $('start-tour').addEventListener('click', startTour);
+  $('start-tour').addEventListener('click', function () { startTour(true); });
 
   // ---- intro: what this is, what works now, what comes in the final ---------
   var intro = $('intro');
@@ -1161,7 +1515,7 @@
     if (e.clientX < r.left || e.clientX > r.right || e.clientY < r.top || e.clientY > r.bottom) closeIntro();
   });
   $('intro-close').addEventListener('click', closeIntro);
-  $('intro-tour').addEventListener('click', startTour);
+  $('intro-tour').addEventListener('click', function () { startTour(true); });
   $('open-intro').addEventListener('click', function () { endTour(); openIntro(); });
 
   // ---- start ----------------------------------------------------------------
@@ -1179,6 +1533,6 @@
   declutter();
   applyHash(true);
   // first visit without a shared view: explain the map; ?tour=1 starts the tour, ?intro=0 skips both
-  if (params.get('tour') === '1') startTour();
+  if (params.get('tour') === '1') startTour(params.get('auto') !== '0');
   else if (params.get('intro') !== '0' && !core.readHash(location.hash).patch && store('neerkatti-intro') !== 'seen') openIntro();
 })();

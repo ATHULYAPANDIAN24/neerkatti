@@ -85,14 +85,15 @@
         </div>
       </div>
     </div>
-    <div id="map" role="region" aria-label="Map of the Pallikaranai watershed, 2018 to 2026"></div>
+    <div id="map" role="region" aria-label="Map of the Pallikaranai watershed, 2018 to 2026. Arrow keys move it; Enter shows what the AI saw at its centre."></div>
     <div class="map-note" id="map-note" role="status" aria-live="polite" hidden></div>
     <div class="coach" id="coach" hidden role="group" aria-labelledby="coach-title">
       <div class="coach-top"><span class="coach-step" id="coach-step">1 of 6</span><button type="button" class="coach-x" id="coach-x" aria-label="End the tour">×</button></div>
       <h2 id="coach-title" tabindex="-1"></h2>
       <p id="coach-text" aria-live="polite"></p>
       <div id="coach-fig"></div>
-      <div class="coach-btns"><button type="button" class="btn ghost" id="coach-back">Back</button><button type="button" class="btn primary" id="coach-next">Next</button></div>
+      <div class="coach-bar" id="coach-bar" hidden aria-hidden="true"><i></i></div>
+      <div class="coach-btns"><button type="button" class="btn ghost coach-auto" id="coach-auto" hidden>Pause</button><button type="button" class="btn ghost" id="coach-back">Back</button><button type="button" class="btn primary" id="coach-next">Next</button></div>
     </div>
     <div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
   </section>
@@ -101,6 +102,7 @@
     <p class="kicker">Pallikaranai watershed · Chennai</p>
     <h1>Where water and marsh became buildings, 2018&nbsp;→&nbsp;2026</h1>
     <p class="lead">Every dry season from 2018 to 2026, labelled square by square by an AI model (Google's Dynamic World) on free Sentinel-2 satellite images. Red patches were water or marsh in 2018 and are buildings in both 2025 and 2026.</p>
+    <p class="ask-tip"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7" fill="none" stroke="currentColor" stroke-width="2"/><path d="m16 16 5 5" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg><span><b>Tap any spot on the map</b> to see what the AI saw there in every season, flagged or not. In a patch's card, <b>Watch it 2018–2026</b> plays its seasons up close.</span></p>
 
     <div class="stats">
       <div class="stat"><b data-stat="lost">28.1 ha</b><span data-stat="acres">≈69 acres flagged</span></div>
@@ -119,7 +121,7 @@
     <div class="phase" aria-label="What works now and what comes in the final round">
       <div class="phase-col">
         <span class="st now">Working now</span>
-        <p>Every dry season 2018–2026, year by year or side by side · AI labels · 36 patches with close-ups, the year each was built over and AI confidence · protected-marsh check · the 2021 floods · near me · share links · offline · open data</p>
+        <p>Every dry season 2018–2026, year by year or side by side · AI labels, and what the AI saw on any spot · 36 patches with close-ups, the year each was built over and AI confidence · watch any patch season by season · protected-marsh check · the 2021 floods · near me · share links · offline · open data</p>
       </div>
       <div class="phase-col">
         <span class="st final">Final round · 4–5 Nov</span>
@@ -245,7 +247,7 @@
       </ul>
     </details>
 
-    <p class="links-row"><a href="../">Project page</a><a href="https://github.com/ATHULYAPANDIAN24/neerkatti#readme">Code and README</a><button type="button" class="link-btn" id="start-tour">Take the 1-minute tour</button></p>
+    <p class="links-row"><a href="../">Project page</a><a href="https://github.com/ATHULYAPANDIAN24/neerkatti#readme">Code and README</a><button type="button" class="link-btn" id="start-tour">Watch the 1-minute tour</button></p>
 
     <footer class="credits">
       <p>Contains modified Copernicus Sentinel data (2018–2026). Dynamic World V1, Google &amp; World Resources Institute (CC BY 4.0). JRC Global Surface Water (EC JRC/Google). ESA WorldCover 2021 (CC BY 4.0). Map and marsh outline © OpenStreetMap contributors (ODbL). Processed with Google Earth Engine (non-commercial). Map library: Leaflet (BSD-2). Code: MIT licence.</p>
@@ -269,7 +271,7 @@
       <span class="st now">Working now</span>
       <ul>
         <li>Every dry season 2018–2026, year by year or side by side</li>
-        <li>AI land labels for every 10&nbsp;m square</li>
+        <li>AI land labels for every 10&nbsp;m square: tap any spot to see them season by season</li>
         <li>36 patches: close-ups, the year each was built over, AI confidence</li>
         <li>Protected-marsh check and the 2021 floods</li>
         <li>Top 10 checked by eye*; near me; open data</li>
@@ -288,7 +290,7 @@
   </div>
   <p class="tiny">*9 of the top 10 show real change: a visual check of satellite imagery, not a ground survey. Every patch is a possible change that needs a ground check.</p>
   <div class="intro-btns">
-    <button type="button" class="btn primary" id="intro-tour">Take the 1-minute tour</button>
+    <button type="button" class="btn primary" id="intro-tour">Watch the 1-minute tour</button>
     <button type="button" class="btn ghost" id="intro-close">Explore the map</button>
   </div>
   <p class="intro-links"><a href="../">Project page</a><a href="https://github.com/ATHULYAPANDIAN24/neerkatti#how-it-works">Method</a><a href="https://github.com/ATHULYAPANDIAN24/neerkatti">Code on GitHub</a></p>
