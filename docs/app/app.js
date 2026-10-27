@@ -403,9 +403,10 @@
     s.failed = true;
     s.layer.setOpacity(0);
     imageError = s.key;
-    setNote((s.view === 'labels' ? 'The AI labels for ' : 'The satellite image for ') + keyLong(s.key) +
+    var labels = s.view === 'labels';
+    setNote((labels ? 'The AI labels for ' : 'The satellite image for ') + keyLong(s.key) +
       (navigator.onLine ? ' did not load. Check the connection; it retries when you change season.'
-        : ' are not saved on this device yet. They load when you are back online.'), true);
+        : (labels ? ' are' : ' is') + ' not saved on this device yet. ' + (labels ? 'They load' : 'It loads') + ' when you are back online.'), true);
   }
   function point(s, key, full) {
     s.full = full && s.view === 'photo' && !noFull[key];
@@ -603,6 +604,7 @@
       if (state.year === LAST) { setPlaying(false); return; }
       var next = String(+state.year + 1);
       var status = preloaded[src(state.view, next, playFull)];
+      if (status === 'error' && playFull && state.view === 'photo') status = 'ok';   // its light copy stands in (failed())
       if (status === 'loading' && (waited || 0) < 10000) {
         setNote('Loading ' + next + '…');
         tick((waited || 0) + 300);
@@ -1104,6 +1106,10 @@
         (+LAST - 1) + ' and ' + LAST + ', so the rule does not flag it.',
       dry: '<b>' + cap(esc(names[FIRST])) + ' in ' + FIRST + ', not water or marsh</b>, so the rule does not look at it.'
     }[v.kind];
+    if ([FIRST, String(+LAST - 1), LAST].some(function (y) { return names[y] === 'not loaded'; })) {
+      verdict = 'Some seasons the rule needs did not load, so it cannot be applied here.';
+      v.kind = 'missing';
+    }
     return '<div class="pop sp">' +
       '<div class="pop-title">What the AI saw on this spot</div>' +
       '<p class="sp-sub">About one 10&nbsp;m square, at ' + at.lat.toFixed(5) + ', ' + at.lng.toFixed(5) + '. The most common Dynamic World label each dry season.</p>' +
