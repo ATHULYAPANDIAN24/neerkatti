@@ -51,6 +51,30 @@
       .sort(function (a, b) { return b.ha - a.ha || a.area.localeCompare(b.area); });
   }
 
+  // ---- year by year (analysis/year_by_year.py) ----------------------------------
+  // From which season the map draws a patch as built over (every patch is built in 2025 and 2026)
+  function builtFrom(p) { return p.built_since || 2025; }
+
+  // ---- the protected marsh (analysis/context_layers.py) --------------------------
+  // 'inside' the mapped outline (even partly), in the 'zone' of `zoneM` metres around it, or 'outside'
+  function marshStatus(p, zoneM) {
+    if (p.marsh_share > 0) return 'inside';
+    return p.marsh_distance_m <= zoneM ? 'zone' : 'outside';
+  }
+
+  // ---- what the lost marsh could hold -----------------------------------------------
+  // Water over `ha` hectares at `depth` metres, in litres and Olympic pools (2,500 m³ each)
+  function storage(ha, depth) {
+    var m3 = ha * 10000 * depth;
+    return { m3: m3, litres: m3 * 1000, pools: m3 / 2500 };
+  }
+  // Litres the Indian way: 28.1 crore, 45 lakh
+  function indianLitres(l) {
+    if (l >= 1e7) return (l / 1e7).toFixed(l < 1e9 ? 1 : 0) + ' crore litres';
+    if (l >= 1e5) return (l / 1e5).toFixed(l < 1e6 ? 1 : 0) + ' lakh litres';
+    return Math.round(l).toLocaleString('en-IN') + ' litres';
+  }
+
   // ---- keeping marks apart on screen ------------------------------------------
   function overlaps(a, b) { return a[0] < b[2] && a[2] > b[0] && a[1] < b[3] && a[3] > b[1]; }
 
@@ -81,7 +105,7 @@
     return null;
   }
 
-  // ---- the address that reopens a view: #patch-4&year=2018&layer=labels ---------
+  // ---- the address that reopens a view: #patch-4&year=2021&layer=labels&marsh=1 ---
   function readHash(hash) {
     var out = {};
     String(hash || '').replace(/^#/, '').split('&').forEach(function (part) {
@@ -94,17 +118,25 @@
     });
     return out;
   }
-  // view: {patch, year: '2018' | 'compare' | '2026', layer: 'photo' | 'labels'}; defaults are left out
+  // view: {patch, year: 'compare' or one season ('2021'), left and right: the two sides of
+  // the compare ('2018', 'monsoon'…), layer: 'photo' | 'labels', marsh: true}; defaults are left out
   function hashFor(view) {
     var parts = [];
     if (view.patch) parts.push('patch-' + view.patch);
     if (view.year && view.year !== 'compare') parts.push('year=' + view.year);
+    else {
+      if (view.left && view.left !== '2018') parts.push('left=' + view.left);
+      if (view.right && view.right !== '2026') parts.push('right=' + view.right);
+    }
     if (view.layer === 'labels') parts.push('layer=labels');
+    if (view.marsh) parts.push('marsh=1');
     return parts.length ? '#' + parts.join('&') : '';
   }
 
   return {
     distance: distance, formatDistance: formatDistance, weakest: weakest, sortPatches: sortPatches,
-    nameOf: nameOf, byArea: byArea, overlaps: overlaps, spread: spread, freeSpot: freeSpot, readHash: readHash, hashFor: hashFor
+    nameOf: nameOf, byArea: byArea, builtFrom: builtFrom,
+    marshStatus: marshStatus, storage: storage, indianLitres: indianLitres,
+    overlaps: overlaps, spread: spread, freeSpot: freeSpot, readHash: readHash, hashFor: hashFor
   };
 });

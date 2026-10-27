@@ -81,3 +81,36 @@ test('the address round-trips a view and ignores junk', () => {
   assert.deepEqual(core.readHash('#year=%E0%A4'), {});
   assert.deepEqual(core.readHash(''), {});
 });
+
+test('the address keeps the compared seasons, one season, and the marsh outline', () => {
+  assert.equal(core.hashFor({ year: 'compare', left: 'monsoon', right: '2026', layer: 'photo' }), '#left=monsoon');
+  assert.equal(core.hashFor({ year: 'compare', left: '2018', right: '2022', marsh: true }), '#right=2022&marsh=1');
+  // one season: the compare sides are not written
+  assert.equal(core.hashFor({ patch: 1, year: '2021', left: '2019', right: '2024', layer: 'labels' }), '#patch-1&year=2021&layer=labels');
+  assert.deepEqual(core.readHash('#left=monsoon&marsh=1'), { left: 'monsoon', marsh: '1' });
+});
+
+test('the year a patch is drawn as built over', () => {
+  assert.equal(core.builtFrom({ built_since: 2021 }), 2021);
+  assert.equal(core.builtFrom({}), 2025, 'every flagged patch is built in 2025 and 2026');
+  for (const p of patches) assert.ok(core.builtFrom(p) >= 2019 && core.builtFrom(p) <= 2025, `patch ${p.rank}`);
+});
+
+test('marsh status follows the outline and the 1 km zone', () => {
+  assert.equal(core.marshStatus({ marsh_share: 0.2, marsh_distance_m: 0 }, 1000), 'inside');
+  assert.equal(core.marshStatus({ marsh_share: 0, marsh_distance_m: 1000 }, 1000), 'zone');
+  assert.equal(core.marshStatus({ marsh_share: 0, marsh_distance_m: 1001 }, 1000), 'outside');
+  const near = patches.filter((p) => core.marshStatus(p, 1000) !== 'outside').length;
+  assert.equal(near, 28);
+});
+
+test('storage: hectares times depth, in Indian units', () => {
+  const s = core.storage(28.1, 1);
+  assert.equal(Math.round(s.m3), 281000);
+  assert.equal(Math.round(s.pools), 112);
+  assert.equal(core.indianLitres(s.litres), '28.1 crore litres');
+  assert.equal(core.indianLitres(4.5e6), '45 lakh litres');
+  assert.equal(core.indianLitres(250000), '2.5 lakh litres');
+  assert.equal(core.indianLitres(12345), '12,345 litres');
+  assert.equal(core.indianLitres(2.81e9), '281 crore litres');
+});

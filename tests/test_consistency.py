@@ -97,7 +97,9 @@ class Data(unittest.TestCase):
         osm = {re.sub(r"^Zone \d+ ", "", n) for n in json.loads(read("outputs/places.json")).values() if n}
         allowed = {p["name"] for p in self.meta["places"]} | {"Sunnambu Kulathur", "Panaiyur"} | osm
         keys = {"rank", "area_ha", "lat", "lon", "change", "status", "place", "site", "checked_by_eye", "finding",
-                "p_wet_2018", "p_built_2025", "p_built_2026", "ai_confidence", "admin_area"}
+                "p_wet_2018", "p_built_2025", "p_built_2026", "ai_confidence", "admin_area",
+                "wet_by_year", "built_by_year", "built_since",
+                "marsh_share", "marsh_distance_m", "wet_monsoon", "landsat_water_ever", "wc2021_built", "wc2021_wet"}
         for p in self.props:
             self.assertLessEqual(set(p), keys, "unexpected property")
             if p["place"] is not None:
@@ -145,6 +147,55 @@ class Data(unittest.TestCase):
         for p in self.props:
             self.assertTrue((APP / "data" / "closeups" / f"patch_{p['rank']:02d}.jpg").is_file(), p["rank"])
 
+    def test_year_by_year(self):
+        # analysis/year_by_year.py: every dry season 2018-2026, per patch and square by square
+        years = self.meta["timeline_years"]
+        self.assertEqual(years, list(range(2018, 2027)))
+        for p in self.props:
+            for k in ("wet_by_year", "built_by_year"):
+                self.assertEqual(len(p[k]), len(years), (p["rank"], k))
+                self.assertTrue(all(0 <= v <= 1 for v in p[k]), (p["rank"], k))
+            # the rule: water or marsh in 2018, buildings in 2025 and 2026
+            self.assertGreaterEqual(p["wet_by_year"][0], 0.9, p["rank"])
+            self.assertEqual(p["built_by_year"][0], 0, p["rank"])
+            self.assertGreaterEqual(min(p["built_by_year"][-2:]), 0.9, p["rank"])
+            self.assertIn(p["built_since"], range(2019, 2026), p["rank"])
+        since = self.meta["built_since_ha"]
+        self.assertEqual(sorted(since), [str(y) for y in range(2019, 2026)])
+        self.assertAlmostEqual(sum(since.values()), self.meta["lost_ha"], delta=0.06)
+
+    def test_every_season_has_its_images(self):
+        for key in [str(y) for y in self.meta["timeline_years"]] + ["monsoon"]:
+            for name in (f"photo_{key}.jpg", f"photo_{key}.webp", f"photo_{key}_light.webp",
+                         f"labels_{key}.png", f"labels_{key}.webp"):
+                self.assertTrue((APP / "data" / name).is_file(), name)
+
+    def test_marsh_and_flood_context(self):
+        # analysis/context_layers.py
+        boundary = json.loads(read("docs/app/data/marsh_boundary.geojson"))
+        kinds = {f["properties"]["kind"]: f for f in boundary["features"]}
+        self.assertEqual(set(kinds), {"marsh", "zone"})
+        self.assertEqual(kinds["marsh"]["properties"]["area_ha"], self.meta["marsh"]["area_ha"])
+        self.assertEqual(kinds["zone"]["properties"]["metres"], self.meta["marsh"]["zone_m"])
+        self.assertEqual(self.meta["monsoon"]["date"], "2021-12-26")
+        self.assertGreater(self.meta["monsoon"]["wet_ha"], self.meta["wet_ha_before"])
+        for p in self.props:
+            self.assertTrue(0 <= p["marsh_share"] <= 1 and p["marsh_distance_m"] >= 0, p["rank"])
+            if p["marsh_share"] > 0:
+                self.assertEqual(p["marsh_distance_m"], 0, p["rank"])
+            self.assertTrue(p["wet_monsoon"] is None or 0 <= p["wet_monsoon"] <= 1, p["rank"])
+            self.assertTrue(0 <= p["landsat_water_ever"] <= 1, p["rank"])
+
+    def test_spreadsheet_matches_the_geojson(self):
+        with open(APP / "data" / "patches.csv", newline="", encoding="utf-8") as fh:
+            rows = list(csv.DictReader(fh))
+        self.assertEqual(len(rows), len(self.props))
+        for row, p in zip(rows, self.props):
+            self.assertEqual(int(row["rank"]), p["rank"])
+            self.assertAlmostEqual(float(row["area_ha"]), p["area_ha"], places=2)
+            self.assertEqual(int(row["built_since"]), p["built_since"])
+            self.assertEqual(float(row["built_share_2024"]), p["built_by_year"][6])
+
 
 class Pages(unittest.TestCase):
     @classmethod
@@ -165,6 +216,27 @@ class Pages(unittest.TestCase):
         self.assertEqual(stat["acres"], f"≈{self.acres} acres flagged")
         self.assertIn("9 of 10", self.app)
         self.assertIn(f"All {self.meta['patch_count']}", self.app)
+
+    def test_new_numbers_before_javascript(self):
+        # the year-by-year, marsh and flood numbers in the HTML match what app.js computes from the data
+        props = [f["properties"] for f in self.patches["features"]]
+        since = self.meta["built_since_ha"]
+        recent = sum(since[y] for y in ("2023", "2024", "2025"))
+        share = round(recent / self.meta["lost_ha"] * 100)
+        near = sum(p["marsh_share"] > 0 or p["marsh_distance_m"] <= self.meta["marsh"]["zone_m"] for p in props)
+        wet = [p for p in props if p["wet_monsoon"] is not None and p["wet_monsoon"] >= 0.5]
+        stat = dict(re.findall(r'data-stat="([\w-]+)">([^<]+)<', self.app_html))
+        self.assertEqual(stat["recent"], f"{share}%")
+        self.assertEqual(stat["near-marsh"], f"{near} of {len(props)}")
+        self.assertEqual(stat["flood-wet"], str(len(wet)))
+        self.assertIn(f"{recent:.1f} ha, two-thirds of it, in the last three seasons", self.app)
+        self.assertIn(f"{share}% of it since 2023", self.app)
+        self.assertIn(f"{near} of {len(props)} in or within 1 km of the protected marsh", self.app)
+        self.assertIn(f"at least {round(self.meta['monsoon']['wet_ha']):,} ha of the study area water or marsh, "
+                      f"against {round(self.meta['wet_ha_before']):,} ha", self.app)
+        self.assertIn(f"{len(wet)} of the flagged patches ({sum(p['area_ha'] for p in wet):.1f} ha)", self.app)
+        self.assertIn(f"{share}% of it built over in the last three dry seasons", self.page)
+        self.assertIn(f"{near} of {len(props)} patches in or within 1 km of the protected marsh", self.page)
 
     def test_why_these_years_matches_the_data(self):
         n = self.meta["dw_images_by_year"]

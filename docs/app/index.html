@@ -4,9 +4,9 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>NEERKATTI · Live map</title>
-<meta name="description" content="An AI water-keeper for Chennai's wetlands. Live map of the Pallikaranai watershed: 2018 vs 2026 Sentinel-2 images, AI land labels, and 36 patches of 2018 water or marsh flagged as built over. DEXATHON 2026, Team Sternritters.">
+<meta name="description" content="An AI water-keeper for Chennai's wetlands. Live map of the Pallikaranai watershed: every dry season from 2018 to 2026 in Sentinel-2 images and AI land labels, and 36 patches of 2018 water or marsh flagged as built over. DEXATHON 2026, Team Sternritters.">
 <meta property="og:title" content="NEERKATTI · Live map of Chennai's lost wetlands">
-<meta property="og:description" content="Compare 2018 and 2026 satellite images of the Pallikaranai watershed: 28.1 ha of water and marsh flagged as built over, 36 patches, top 10 checked by eye.">
+<meta property="og:description" content="Watch the Pallikaranai watershed year by year, 2018–2026: 28.1 ha of water and marsh flagged as built over, two-thirds of it since 2023, most of it in or near the protected marsh.">
 <meta property="og:image" content="https://athulyapandian24.github.io/neerkatti/app/og-map.jpg">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
@@ -42,15 +42,14 @@
     </nav>
   </header>
 
-  <section class="mobile-sum" aria-label="Summary"><b>28.1&nbsp;ha</b> of 2018 water and marsh flagged as built over · Pallikaranai, Chennai · <a href="#panel">patch list below ↓</a></section>
+  <section class="mobile-sum" aria-label="Summary"><b>28.1&nbsp;ha</b> of 2018 water and marsh flagged as built over, <b>65%</b> of it since 2023 · Pallikaranai, Chennai · <a href="#panel">details below ↓</a></section>
 
   <section class="map-wrap" id="map-wrap" aria-label="Map">
     <div class="toolbar">
       <fieldset class="seg">
-        <legend class="sr">Year</legend>
-        <label><input type="radio" name="year" value="before"><span>2018</span></label>
-        <label><input type="radio" name="year" value="compare" checked><span>Compare</span></label>
-        <label><input type="radio" name="year" value="after"><span>2026</span></label>
+        <legend class="sr">How to show the years</legend>
+        <label><input type="radio" name="mode" value="compare" checked><span>Compare</span></label>
+        <label><input type="radio" name="mode" value="single"><span>Year by year</span></label>
       </fieldset>
       <fieldset class="seg">
         <legend class="sr">Layer</legend>
@@ -58,8 +57,9 @@
         <label><input type="radio" name="view" value="labels"><span>AI labels</span></label>
       </fieldset>
       <div class="checks">
-        <label class="chk"><input type="checkbox" id="show-patches" checked> Flagged patches</label>
-        <label class="chk"><input type="checkbox" id="show-names" checked> Place names</label>
+        <label class="chk"><input type="checkbox" id="show-patches" checked> Flagged</label>
+        <label class="chk"><input type="checkbox" id="show-marsh"> Protected marsh</label>
+        <label class="chk chk-names"><input type="checkbox" id="show-names" checked> Names</label>
         <span class="tool-group">
           <button type="button" class="tool-btn" id="near-me" title="List the patches nearest to you. Your location stays on this device." aria-label="Near me: list the patches nearest to you"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4" fill="none" stroke="currentColor" stroke-width="2"/><path d="M12 2v4M12 18v4M2 12h4M18 12h4" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg><span>Near me</span></button>
           <button type="button" class="tool-btn" id="share" title="Copy a link to this exact view" aria-label="Copy a link to this exact view">
@@ -68,11 +68,27 @@
           </button>
         </span>
       </div>
+      <div class="timebar">
+        <div class="tb-compare" id="tb-compare">
+          <label class="tb-pick"><span>Left</span> <select id="left" aria-label="Left of the divider"></select></label>
+          <span class="tb-swap" aria-hidden="true">⇔</span>
+          <label class="tb-pick"><span>Right</span> <select id="right" aria-label="Right of the divider"></select></label>
+          <span class="tb-hint">Drag the white divider on the map</span>
+        </div>
+        <div class="tb-single" id="tb-single" hidden>
+          <button type="button" class="play" id="play" aria-label="Play the dry seasons 2018 to 2026"><svg viewBox="0 0 24 24" aria-hidden="true"><path class="i-play" d="M8 5v14l11-7z"/><path class="i-pause" d="M7 5h4v14H7zM13 5h4v14h-4z"/></svg></button>
+          <div class="tb-track">
+            <input type="range" id="year-range" min="2018" max="2026" step="1" value="2026" aria-label="Dry season (Feb–May)">
+            <div class="tb-ticks" id="tb-ticks" aria-hidden="true"></div>
+          </div>
+          <output class="tb-out" id="year-out" for="year-range" aria-live="polite"><b>2026</b><span>28.1 of 28.1 ha built over</span></output>
+        </div>
+      </div>
     </div>
-    <div id="map" role="region" aria-label="Map of the Pallikaranai watershed, 2018 and 2026"></div>
+    <div id="map" role="region" aria-label="Map of the Pallikaranai watershed, 2018 to 2026"></div>
     <div class="map-note" id="map-note" role="status" aria-live="polite" hidden></div>
     <div class="coach" id="coach" hidden role="group" aria-labelledby="coach-title">
-      <div class="coach-top"><span class="coach-step" id="coach-step">1 of 3</span><button type="button" class="coach-x" id="coach-x" aria-label="End the tour">×</button></div>
+      <div class="coach-top"><span class="coach-step" id="coach-step">1 of 6</span><button type="button" class="coach-x" id="coach-x" aria-label="End the tour">×</button></div>
       <h2 id="coach-title" tabindex="-1"></h2>
       <p id="coach-text" aria-live="polite"></p>
       <div id="coach-fig"></div>
@@ -84,12 +100,15 @@
   <main class="panel" id="panel">
     <p class="kicker">Pallikaranai watershed · Chennai</p>
     <h1>Where water and marsh became buildings, 2018&nbsp;→&nbsp;2026</h1>
-    <p class="lead">Sentinel-2 satellite images of the Feb–May dry season, labelled square by square by an AI model (Google's Dynamic World). Red patches were water or marsh in 2018 and are buildings in both 2025 and 2026.</p>
+    <p class="lead">Every dry season from 2018 to 2026, labelled square by square by an AI model (Google's Dynamic World) on free Sentinel-2 satellite images. Red patches were water or marsh in 2018 and are buildings in both 2025 and 2026.</p>
 
     <div class="stats">
       <div class="stat"><b data-stat="lost">28.1 ha</b><span data-stat="acres">≈69 acres flagged</span></div>
       <div class="stat"><b data-stat="count">36</b><span>patches of ≥&nbsp;0.1&nbsp;ha</span></div>
       <div class="stat"><b>9 of 10</b><span>top patches show real change</span></div>
+      <div class="stat"><b data-stat="recent">65%</b><span>of it built over since 2023</span></div>
+      <div class="stat"><b data-stat="near-marsh">28 of 36</b><span>in or within 1&nbsp;km of the protected marsh</span></div>
+      <div class="stat"><b data-stat="flood-wet">18</b><span>were water or marsh after the 2021 floods</span></div>
     </div>
 
     <div class="caveat" role="note">
@@ -100,11 +119,11 @@
     <div class="phase" aria-label="What works now and what comes in the final round">
       <div class="phase-col">
         <span class="st now">Working now</span>
-        <p>Satellite compare · AI labels · 36 patches with close-ups and AI confidence · top 10 checked by eye · near me · share links · offline · open data</p>
+        <p>Every dry season 2018–2026, year by year or side by side · AI labels · 36 patches with close-ups, the year each was built over and AI confidence · protected-marsh check · the 2021 floods · near me · share links · offline · open data</p>
       </div>
       <div class="phase-col">
         <span class="st final">Final round · 4–5 Nov</span>
-        <p>Alerts for new changes · citizen photo check · complaint PDF in Tamil and English · radar for monsoon clouds</p>
+        <p>Alerts for new changes, first inside the protected zone · citizen photo check · complaint PDF in Tamil and English · radar through monsoon clouds</p>
       </div>
     </div>
 
@@ -122,6 +141,7 @@
         <label class="sort"><span>Sort</span>
           <select id="sort">
             <option value="size">Largest first</option>
+            <option value="since">Newest first</option>
             <option value="confidence">AI confidence</option>
             <option value="place">Area name</option>
             <option value="distance" disabled hidden>Nearest to me</option>
@@ -131,13 +151,41 @@
       <p class="list-note" id="list-note" role="status" aria-live="polite" hidden></p>
       <p class="filter" id="filter" hidden><span id="filter-text"></span><button type="button" class="link-btn" id="filter-clear">Show all</button></p>
       <ol class="spots" id="spots"></ol>
-      <p class="small">Tap a patch to zoom to it and see its 2018 | 2026 close-up. We checked the top 10 by eye on those close-ups and on current high-resolution satellite imagery: 9 show building, paving or filling, and 1 is unclear (<a href="https://github.com/ATHULYAPANDIAN24/neerkatti/blob/main/outputs/topten_check.md">notes</a>). A visual check, not a ground survey. The other 26 are not checked yet; the AI confidence shows which to check first.</p>
+      <p class="small">Tap a patch to zoom to it and see its 2018 | 2026 close-up and what the AI saw there each year. We checked the top 10 by eye on those close-ups and on current high-resolution satellite imagery: 9 show building, paving or filling, and 1 is unclear (<a href="https://github.com/ATHULYAPANDIAN24/neerkatti/blob/main/outputs/topten_check.md">notes</a>). A visual check, not a ground survey. The other 26 are not checked yet; the AI confidence shows which to check first.</p>
+    </section>
+
+    <section class="chart-card" aria-labelledby="since-title">
+      <h2 id="since-title">When the 28.1&nbsp;ha was built over</h2>
+      <p class="small">For each flagged 10&nbsp;m square, the first dry season from which the AI labels it buildings every year through 2026. Tap a year to see that season on the map.</p>
+      <div class="cols cols-since" id="since-chart"></div>
+      <p class="chart-take" id="since-take"><b>18.4&nbsp;ha, two-thirds of it, in the last three seasons.</b> The filling is speeding up.</p>
+    </section>
+
+    <section class="chart-card" aria-labelledby="marsh-title">
+      <h2 id="marsh-title">The protected marsh and its 1&nbsp;km zone</h2>
+      <p class="small">Pallikaranai Marsh is a Ramsar wetland. On 24 Sep 2025 the National Green Tribunal told the authorities to grant no approvals or permissions within a 1&nbsp;km zone of influence around it (<a href="https://www.dtnext.in/news/chennai/credai-chennai-challenges-ngts-1-km-construction-restriction-around-pallikaranai-ramsar-site">DT Next</a>). In October 2026 a proposed interim buffer was cut by 96%, from 3,358 to 128&nbsp;ha (<a href="https://www.newindianexpress.com/states/tamil-nadu/2026/Oct/13/">New Indian Express, 13 Oct</a>).</p>
+      <div class="hbars" id="marsh-bars"></div>
+      <p class="small">Outline from OpenStreetMap (tagged Reserve Forest and Ramsar site): volunteer-mapped, not the official survey. Our patches were already built over by the 2025 dry season, before the tribunal's order; the final round's alerts would catch new changes inside the zone.</p>
+      <p class="card-btns"><button type="button" class="btn ghost" id="marsh-show">Show it on the map</button></p>
+    </section>
+
+    <section class="chart-card" aria-labelledby="flood-title">
+      <h2 id="flood-title">After the 2021 floods</h2>
+      <p class="small" id="flood-text">A dry-season image shows the marsh at its smallest. On <b>26 Dec 2021</b>, the clearest image after Chennai's November 2021 floods, the AI labels at least <b>2,115&nbsp;ha</b> of the study area water or marsh, against 1,628&nbsp;ha in the 2018 dry season. <b>18 of the flagged patches</b> (17.6&nbsp;ha) were still at least half water or marsh that day. All of them are buildings now.</p>
+      <p class="card-btns"><button type="button" class="btn ghost" id="flood-show">Compare 26 Dec 2021 with 2026</button></p>
     </section>
 
     <section class="chart-card" aria-labelledby="areas-title">
       <h2 id="areas-title">Flagged area by zone or village</h2>
       <p class="small">All 36 patches. Inside Chennai they are grouped by Greater Chennai Corporation zone, outside it by village (names from OpenStreetMap). Tap one to list its patches.</p>
       <div class="hbars" id="areas"></div>
+    </section>
+
+    <section class="chart-card calc" aria-labelledby="calc-title">
+      <h2 id="calc-title">What 28.1&nbsp;ha of marsh could hold</h2>
+      <p class="small">A wetland stores floodwater. Pick a depth to see how much water the flagged land could hold if it were still marsh. This is a what-if: we don't know the real depth on each patch.</p>
+      <label class="calc-row"><span>Water depth</span><input type="range" id="depth" min="0.25" max="2" step="0.25" value="1"><output id="depth-out" for="depth">1 m</output></label>
+      <p class="calc-out" aria-live="polite"><b id="calc-litres">28.1 crore litres</b><span id="calc-pools">about 112 Olympic swimming pools</span></p>
     </section>
 
     <details class="about">
@@ -148,6 +196,8 @@
         <li>A square is flagged if it was water or marsh in 2018 (ignoring the outer ~20&nbsp;m rim of each water body) and is buildings in <b>both</b> 2025 and 2026.</li>
         <li>Patches smaller than about 0.1&nbsp;ha are dropped as noise.</li>
         <li>Each patch gets an <b>AI confidence</b> from Dynamic World's own probabilities: how sure it was of water or marsh in 2018 and of buildings in 2025 and 2026. The weakest of the three sets the level: high from 50%, medium from 35%, low below.</li>
+        <li><b>When it was built over:</b> the first dry season from which the AI labels the square buildings every year through 2026. A square that flips back to marsh for one season counts only from after the flip, so the year is a cautious one.</li>
+        <li><b>Context:</b> the protected-marsh outline from OpenStreetMap, the AI's labels for 26 Dec 2021 after the floods, and Landsat's water history (JRC, 1984–2021) as a second opinion.</li>
       </ol>
       <p class="more"><a href="https://github.com/ATHULYAPANDIAN24/neerkatti#how-it-works">Full method and code →</a></p>
     </details>
@@ -155,9 +205,9 @@
     <details class="about">
       <summary>What's different</summary>
       <ul>
-        <li><b>ISRO's wetland atlas</b> compares snapshots ten years apart (2006–07 vs 2017–18).</li>
+        <li><b>ISRO's wetland atlas</b> compares snapshots ten years apart (2006–07 vs 2017–18). NEERKATTI looks at every dry season, so it shows when the filling happened and that it is speeding up.</li>
         <li><b>TN-SWIP</b>, the state's satellite pilot, sends its alerts to officials (<a href="https://www.deccanchronicle.com/southern-states/tamil-nadu/tech-tools-to-help-save-water-bodies-of-tamil-nadu-1981503">Deccan Chronicle, 23 Aug 2026</a>).</li>
-        <li><b>NEERKATTI</b> is open to anyone, flags a square only if it stays built-up two years running, and hands over the data. Continuous alerts and complaints come in the final round.</li>
+        <li><b>NEERKATTI</b> is open to anyone, flags a square only if it stays built-up two years running, checks each patch against the protected marsh and the 2021 floods, and hands over the data. Continuous alerts and complaints come in the final round.</li>
       </ul>
     </details>
 
@@ -165,9 +215,11 @@
       <summary>How far to trust it</summary>
       <ul>
         <li>Dynamic World's own validation gives 86.7% user's accuracy for buildings but only 36.8% producer's accuracy for marsh (<a href="https://www.nature.com/articles/s41597-022-01307-4">Brown et al. 2022</a>, Tables 7–8). It misses marsh, so 28.1&nbsp;ha is a cautious count.</li>
-        <li>10&nbsp;m squares miss small dumping, and monsoon clouds limit us to dry-season images for now.</li>
+        <li>10&nbsp;m squares miss small dumping, and monsoon clouds limit us to dry-season images for the timeline.</li>
+        <li>Season labels flicker: some patches read as buildings for one season and marsh the next. The year-by-year bars in each patch show this as it is; the "built over since" year only counts unbroken runs.</li>
         <li>The top-10 check is a visual check of imagery, not a ground survey.</li>
         <li>AI confidence is the model's own certainty, not a measure of truth. In the top 10, the unclear patch (#9) is <i>medium</i>, like six of the nine confirmed ones. Low-confidence patches are the ones to check first.</li>
+        <li>The marsh outline is OpenStreetMap's, not the official survey; the 26 Dec 2021 labels come from one image with about 17% of the area under cloud (shown white); Landsat's water history sees open water but not water under marsh plants.</li>
       </ul>
     </details>
 
@@ -176,7 +228,7 @@
       <p><b>Why 2018.</b> It is the first dry season with enough images. Sentinel-2B joined Sentinel-2A in 2017, so Dynamic World has <b>18</b> images of this area for Feb–May 2018, but only <b>4</b> in 2016 and <b>4</b> in 2017. A season summary made from 4 images can flip on one cloudy or mislabelled day.</p>
       <figure class="cols-fig">
         <div class="cols" id="years-chart"></div>
-        <figcaption>Dynamic World images of the study area, Feb–May of each year. Orange: the seasons the rule uses.</figcaption>
+        <figcaption>Dynamic World images of the study area, Feb–May of each year. Orange: the seasons the rule uses; every season from 2018 is on the map.</figcaption>
       </figure>
       <p><b>Why 2026.</b> It is the latest complete dry season, and the rule also needs 2025: a square must be buildings in both.</p>
       <p><b>Why one watershed.</b> So that every result could be checked: the top 10 by eye, and every patch with the AI's own confidence. Pallikaranai is a Ramsar wetland (site 2481) under pressure now, and one study area at 10&nbsp;m fits the free Earth Engine tier and a site with no server. The rule itself runs on any area; Chennai-wide runs come next.</p>
@@ -187,16 +239,16 @@
       <ul>
         <li><b>₹0 data cost:</b> free Sentinel-2 images and Dynamic World labels, Google Earth Engine (non-commercial), hosted free on GitHub Pages. No server and no API keys.</li>
         <li data-meta="photos">Sentinel-2 photos: median of the clear Feb–May images of each year.</li>
-        <li>Study area: 80.17–80.26°E, 12.86–12.99°N. Made by <code>analysis/app_assets.py</code>.</li>
-        <li><a href="data/patches.geojson" download="neerkatti_patches.geojson">Download all 36 patches (GeoJSON)</a>, with their zone or village and AI confidence.</li>
+        <li>Study area: 80.17–80.26°E, 12.86–12.99°N. Made by <code>analysis/app_assets.py</code>, <code>year_by_year.py</code> and <code>context_layers.py</code>.</li>
+        <li><a href="data/patches.csv" download="neerkatti_patches.csv">Download all 36 patches as a spreadsheet (CSV)</a> or <a href="data/patches.geojson" download="neerkatti_patches.geojson">as map outlines (GeoJSON)</a>: zone or village, AI confidence, year built over, marsh distance, every season's shares.</li>
         <li>Once opened, the map also works offline: this site keeps a copy on your device.</li>
       </ul>
     </details>
 
-    <p class="links-row"><a href="../">Project page</a><a href="https://github.com/ATHULYAPANDIAN24/neerkatti#readme">Code and README</a><button type="button" class="link-btn" id="start-tour">Take the 30-second tour</button></p>
+    <p class="links-row"><a href="../">Project page</a><a href="https://github.com/ATHULYAPANDIAN24/neerkatti#readme">Code and README</a><button type="button" class="link-btn" id="start-tour">Take the 1-minute tour</button></p>
 
     <footer class="credits">
-      <p>Contains modified Copernicus Sentinel data (2018–2026). Dynamic World V1, Google &amp; World Resources Institute (CC BY 4.0). Map © OpenStreetMap contributors. Processed with Google Earth Engine (non-commercial). Map library: Leaflet (BSD-2). Code: MIT licence.</p>
+      <p>Contains modified Copernicus Sentinel data (2018–2026). Dynamic World V1, Google &amp; World Resources Institute (CC BY 4.0). JRC Global Surface Water (EC JRC/Google). ESA WorldCover 2021 (CC BY 4.0). Map and marsh outline © OpenStreetMap contributors (ODbL). Processed with Google Earth Engine (non-commercial). Map library: Leaflet (BSD-2). Code: MIT licence.</p>
       <p>NEERKATTI · Team Sternritters (DEX26302) · DEXATHON 2026, Sathyabama, Chennai.</p>
     </footer>
   </main>
@@ -206,37 +258,37 @@
   <form method="dialog" class="intro-x"><button aria-label="Close">×</button></form>
   <p class="kicker">DEXATHON 2026 · Team Sternritters · Round 2 prototype</p>
   <h2 id="intro-title" tabindex="-1" autofocus>NEERKATTI, an AI water-keeper for Chennai's wetlands</h2>
-  <p>An AI model labels free satellite images square by square. Our rule flags 2018 water and marsh in the Pallikaranai watershed that is built over in <b>both</b> 2025 and 2026.</p>
+  <p>An AI model labels free satellite images square by square, every dry season since 2018. Our rule flags 2018 water and marsh in the Pallikaranai watershed that is built over in <b>both</b> 2025 and 2026.</p>
   <div class="intro-stats">
-    <div><b>28.1&nbsp;ha</b><span>flagged (≈69 acres)</span></div>
-    <div><b>36</b><span>patches on the map</span></div>
-    <div><b>9 of 10</b><span>top patches show real change*</span></div>
+    <div><b>28.1&nbsp;ha</b><span>flagged (≈69 acres) in 36 patches</span></div>
+    <div><b>65%</b><span>of it built over since 2023</span></div>
+    <div><b>28 of 36</b><span>in or within 1&nbsp;km of the protected marsh</span></div>
   </div>
   <div class="intro-cols">
     <div>
       <span class="st now">Working now</span>
       <ul>
-        <li>2018 vs 2026 satellite compare</li>
+        <li>Every dry season 2018–2026, year by year or side by side</li>
         <li>AI land labels for every 10&nbsp;m square</li>
-        <li>36 flagged patches with close-ups and AI confidence</li>
-        <li>Top 10 checked by eye; patches near you</li>
-        <li>Shareable links and open GeoJSON</li>
+        <li>36 patches: close-ups, the year each was built over, AI confidence</li>
+        <li>Protected-marsh check and the 2021 floods</li>
+        <li>Top 10 checked by eye*; near me; open data</li>
       </ul>
     </div>
     <div>
       <span class="st final">Final round · 4–5 Nov</span>
       <ul>
-        <li>Alerts for new changes</li>
+        <li>Alerts for new changes, first inside the protected zone</li>
         <li>Citizen photo check by a vision model</li>
         <li>Complaint PDF in Tamil and English</li>
-        <li>Sentinel-1 radar for monsoon clouds</li>
+        <li>Sentinel-1 radar through monsoon clouds</li>
       </ul>
       <p class="tiny">Planned, not built yet: the rules say major features are built in the 24-hour final.</p>
     </div>
   </div>
-  <p class="tiny">*A visual check of satellite imagery, not a ground survey. Every patch is a possible change that needs a ground check.</p>
+  <p class="tiny">*9 of the top 10 show real change: a visual check of satellite imagery, not a ground survey. Every patch is a possible change that needs a ground check.</p>
   <div class="intro-btns">
-    <button type="button" class="btn primary" id="intro-tour">Take the 30-second tour</button>
+    <button type="button" class="btn primary" id="intro-tour">Take the 1-minute tour</button>
     <button type="button" class="btn ghost" id="intro-close">Explore the map</button>
   </div>
   <p class="intro-links"><a href="../">Project page</a><a href="https://github.com/ATHULYAPANDIAN24/neerkatti#how-it-works">Method</a><a href="https://github.com/ATHULYAPANDIAN24/neerkatti">Code on GitHub</a></p>

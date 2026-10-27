@@ -1,6 +1,6 @@
 """Rebuild everything the site shows, in order, then run the tests. Stops at the first failure.
 
-Usage:  .venv/Scripts/python analysis/rebuild.py            all steps (needs Earth Engine, about 10 minutes)
+Usage:  .venv/Scripts/python analysis/rebuild.py            all steps (needs Earth Engine, about 15 minutes)
         .venv/Scripts/python analysis/rebuild.py --from 5   start at step 5
         .venv/Scripts/python analysis/rebuild.py --list     show the steps
 """
@@ -15,9 +15,12 @@ STEPS = [
     ("change map, stats.json and top_spots.csv", [PY, "analysis/change_map.py"]),
     ("live map data: photos, AI labels, patches", [PY, "analysis/app_assets.py"]),
     ("zone or village, AI confidence, close-ups 11+", [PY, "analysis/patch_details.py"]),
+    ("every dry season 2019-2025, year each patch was built over", [PY, "analysis/year_by_year.py"]),
+    ("protected marsh, 2021 floods, Landsat and WorldCover", [PY, "analysis/context_layers.py"]),
     ("top-10 close-ups for the check by eye", [PY, "analysis/topten_closeups.py"]),
     ("web-sized close-ups (no Earth Engine)", [PY, "analysis/app_closeups.py"]),
     ("WebP map images at the map's shape (no Earth Engine)", [PY, "analysis/web_images.py"]),
+    ("the patches as a spreadsheet (no Earth Engine)", [PY, "analysis/open_data.py"]),
     ("project page images", [PY, "analysis/demo_assets.py"]),
     ("consistency tests (Python)", [PY, "-m", "unittest", "discover", "-s", "tests"]),
     ("map logic tests (Node)", ["node", "--test", *sorted(str(p.relative_to(ROOT)) for p in (ROOT / "tests").glob("*.test.js"))]),

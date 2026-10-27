@@ -1,18 +1,23 @@
 // NEERKATTI live map (Round 2 prototype).
-// Data comes from data/neerkatti_data.js (analysis/app_assets.py + patch_details.py);
-// plain helpers are in core.js, which tests/core.test.js checks.
+// Data comes from data/neerkatti_data.js (analysis/app_assets.py, patch_details.py,
+// year_by_year.py and context_layers.py); plain helpers are in core.js, which
+// tests/core.test.js checks.
 (function () {
   var D = window.NEERKATTI;
   var core = window.NKCore;
   var meta = D.meta;
   var all = D.patches.features.map(function (f) { return f.properties; });
   var top10 = D.patches.features.slice(0, 10);
+  var YEARS = meta.timeline_years.map(String);   // '2018' … '2026', every dry season on the map
+  var FIRST = YEARS[0], LAST = YEARS[YEARS.length - 1];
+  var ZONE = meta.marsh.zone_m;
   var narrow = window.matchMedia('(max-width: 899px)');
   var calm = window.matchMedia('(prefers-reduced-motion: reduce)');
   var params = new URLSearchParams(location.search);
-  var state = { year: 'compare', view: 'photo', pos: 0.5, patches: true };
+  // mode 'compare': `left` | `right` either side of the divider; mode 'single': one season, `year`
+  var state = { mode: 'compare', left: FIRST, right: LAST, year: LAST, view: 'photo', pos: 0.5, patches: true, marsh: false };
   var map = null;
-  var mapApi = null;   // set once the map has started: pick, fitRanks, showYou, home
+  var mapApi = null;   // set once the map has started: pick, fitRanks, showYou, showYear, showMarsh, showFlood
 
   // Keep a copy on the device, so the map opens without a connection (sw.js)
   if ('serviceWorker' in navigator && (location.protocol === 'https:' || /^(localhost|127\.0\.0\.1)$/.test(location.hostname))) {
@@ -26,27 +31,47 @@
     });
   }
   function ha(x) { return x.toFixed(2); }
+  function ha1(x) { return x.toFixed(1); }
+  function pct(x) { return Math.round(x * 100) + '%'; }
   function acres(x) { var a = x * 2.471; return a >= 10 ? Math.round(a) : a.toFixed(1); }
   function gmaps(p) { return 'https://www.google.com/maps/@' + p.lat + ',' + p.lon + ',400m/data=!3m1!1e3'; }
   function placeOf(p) { return esc(core.nameOf(p)); }
   function closeup(rank) { return 'data/closeups/patch_' + (rank < 10 ? '0' : '') + rank + '.jpg'; }
   function cap(s) { return s.charAt(0).toUpperCase() + s.slice(1); }
   function $(id) { return document.getElementById(id); }
+  function sum(list) { return list.reduce(function (s, p) { return s + p.area_ha; }, 0); }
   function store(key, value) {
     try { if (value === undefined) return localStorage.getItem(key); localStorage.setItem(key, value); } catch (e) { return null; }
   }
   function scrollToEl(el) { el.scrollIntoView({ behavior: calm.matches ? 'auto' : 'smooth', block: 'start' }); }
 
+  // The images on the map: a dry season ('2018' … '2026') or the day after the floods ('monsoon')
+  var MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+  var floodDay = (function (d) { return +d[2] + ' ' + MONTHS[+d[1] - 1] + ' ' + d[0]; })(meta.monsoon.date.split('-'));
+  function isKey(k) { return k === 'monsoon' || YEARS.indexOf(k) >= 0; }
+  function keyName(k) { return k === 'monsoon' ? floodDay : k; }
+  function keyLong(k) { return k === 'monsoon' ? floodDay + ', after the floods' : 'Feb–May ' + k; }
+
+  // Flagged hectares built over for good by the end of each season (square by square, year_by_year.py)
+  var builtBy = {};
+  YEARS.reduce(function (acc, y) { builtBy[y] = acc + (meta.built_since_ha[y] || 0); return builtBy[y]; }, 0);
+
   // ---- side panel (filled first, so it works even if the map cannot start) --
   function setText(key, text) {
     document.querySelectorAll('[data-stat="' + key + '"]').forEach(function (el) { el.textContent = text; });
   }
+  var recentHa = ['2023', '2024', '2025'].reduce(function (s, y) { return s + (meta.built_since_ha[y] || 0); }, 0);
+  var nearMarsh = all.filter(function (p) { return core.marshStatus(p, ZONE) !== 'outside'; });
+  var floodWet = all.filter(function (p) { return p.wet_monsoon !== null && p.wet_monsoon >= 0.5; });
   setText('lost', meta.lost_ha.toFixed(1) + ' ha');
   setText('acres', '≈' + Math.round(meta.lost_ha * 2.471) + ' acres flagged');
   setText('count', String(meta.patch_count));
+  setText('recent', Math.round(recentHa / meta.lost_ha * 100) + '%');
+  setText('near-marsh', nearMarsh.length + ' of ' + all.length);
+  setText('flood-wet', String(floodWet.length));
   document.querySelector('[data-meta="photos"]').textContent =
-    'Sentinel-2 photos: median of ' + meta.s2_images[meta.years[0]] + ' clear images (' + meta.years[0] + ') and ' +
-    meta.s2_images[meta.years[1]] + ' (' + meta.years[1] + '), ' + meta.season + '.';
+    'Sentinel-2 photos: median of the clear Feb–May images of each year (' + YEARS.map(function (y) { return meta.s2_images[y]; }).join(', ') +
+    ' images, ' + FIRST + '–' + LAST + '), and one image from ' + floodDay + '.';
 
   var note = $('map-note');
   function setNote(text, isError) {
@@ -61,10 +86,17 @@
   window.addEventListener('online', connection);
   window.addEventListener('offline', connection);
 
-  // ---- the patch list: top 10 or all, sorted, filtered by area, or nearest first
+  // ---- the patch list: top 10 or all, sorted, filtered, or nearest first --------
   var list = $('spots');
-  var listState = { scope: 'top', sort: 'size', area: null, from: null };
+  // filter: null, {kind: 'area', value: 'Perungudi zone'} or {kind: 'marsh', value: 'inside' | 'zone' | 'outside'}
+  var listState = { scope: 'top', sort: 'size', filter: null, from: null };
   var current = -1;   // rank of the selected patch
+  var MARSH_TEXT = { inside: 'Overlap the outline', zone: 'Within 1 km', outside: 'Farther away' };
+  var MARSH_TITLE = {
+    inside: 'Patches overlapping the protected marsh',
+    zone: 'Patches within 1 km of the protected marsh',
+    outside: 'Patches farther than 1 km from the marsh'
+  };
 
   function confPill(p, short) {
     var level = p.ai_confidence;
@@ -80,6 +112,7 @@
       '<span class="ha">' + ha(p.area_ha) + ' ha</span>' +
       '<span class="meta">' + (p.site ? '<span class="pill site">Site ' + p.site + '</span>' : '') +
       '<span>' + (p.finding ? esc(p.finding) : 'Not checked by eye yet') + '</span>' + confPill(p) +
+      '<span class="since">Built over since ' + core.builtFrom(p) + '</span>' +
       (listState.from ? '<span class="dist">' + away(p) + '</span>' : '') + '</span>' +
       '</button>';
   }
@@ -93,12 +126,18 @@
     if (!mapApi) { window.open(gmaps(p), '_blank', 'noopener'); return; }
     mapApi.pick(p.rank);
   }
+  function passes(p, f) {
+    if (!f) return true;
+    if (f.kind === 'area') return (p.admin_area || 'Unnamed area') === f.value;
+    return core.marshStatus(p, ZONE) === f.value;
+  }
+  var SORTS = { since: function (items) {
+    return items.slice().sort(function (a, b) { return core.builtFrom(b) - core.builtFrom(a) || a.rank - b.rank; });
+  } };
   function renderList() {
-    var items = all.filter(function (p) {
-      if (listState.area) return (p.admin_area || 'Unnamed area') === listState.area;
-      return listState.scope === 'all' || p.rank <= 10;
-    });
-    items = core.sortPatches(items, listState.sort, listState.from);
+    var f = listState.filter;
+    var items = all.filter(function (p) { return f ? passes(p, f) : listState.scope === 'all' || p.rank <= 10; });
+    items = SORTS[listState.sort] ? SORTS[listState.sort](items) : core.sortPatches(items, listState.sort, listState.from);
     list.innerHTML = '';
     items.forEach(function (p) {
       var li = document.createElement('li');
@@ -106,15 +145,12 @@
       li.firstChild.addEventListener('click', function () { pick(p); });
       list.appendChild(li);
     });
-    $('list-title').textContent = listState.area ? 'Flagged patches in ' + listState.area
+    $('list-title').textContent = f ? (f.kind === 'area' ? 'Flagged patches in ' + f.value : MARSH_TITLE[f.value])
       : listState.scope === 'all' ? 'All ' + all.length + ' flagged patches' : 'Top 10 flagged patches';
-    $('filter').hidden = !listState.area;
-    if (listState.area) {
-      var sum = items.reduce(function (s, p) { return s + p.area_ha; }, 0);
-      $('filter-text').textContent = items.length + (items.length === 1 ? ' patch, ' : ' patches, ') + ha(sum) + ' ha in all. ';
-    }
+    $('filter').hidden = !f;
+    if (f) $('filter-text').textContent = items.length + (items.length === 1 ? ' patch, ' : ' patches, ') + ha(sum(items)) + ' ha in all. ';
     document.querySelectorAll('.hbar').forEach(function (b) {
-      b.setAttribute('aria-pressed', String(b.dataset.area === listState.area));
+      b.setAttribute('aria-pressed', String(!!f && b.dataset.kind === f.kind && b.dataset.value === f.value));
     });
     markList(current);
   }
@@ -124,33 +160,84 @@
     if (input) input.checked = true;
   }
   document.querySelectorAll('input[name="scope"]').forEach(function (r) {
-    r.addEventListener('change', function () { listState.scope = r.value; listState.area = null; renderList(); });
+    r.addEventListener('change', function () { listState.scope = r.value; listState.filter = null; renderList(); });
   });
   $('sort').addEventListener('change', function (e) { listState.sort = e.target.value; renderList(); });
-  $('filter-clear').addEventListener('click', function () { listState.area = null; renderList(); });
+  $('filter-clear').addEventListener('click', function () { listState.filter = null; renderList(); });
   renderList();
 
-  // ---- flagged area by zone or village: one bar each, tap to list its patches --
-  var areas = core.byArea(all);
-  $('areas').innerHTML = areas.map(function (a) {
-    var n = a.ranks.length;
-    return '<button type="button" class="hbar" data-area="' + esc(a.area) + '" aria-pressed="false">' +
-      '<span class="hbar-name">' + esc(a.area) + '<small>' + n + (n === 1 ? ' patch' : ' patches') + '</small></span>' +
-      '<span class="hbar-track" aria-hidden="true"><i style="width:' + (a.ha / areas[0].ha * 100).toFixed(1) + '%"></i></span>' +
-      '<span class="hbar-val">' + ha(a.ha) + ' ha</span></button>';
-  }).join('');
-  $('areas').querySelectorAll('.hbar').forEach(function (b) {
-    b.addEventListener('click', function () {
-      var a = areas.filter(function (x) { return x.area === b.dataset.area; })[0];
-      listState.area = listState.area === a.area ? null : a.area;
-      if (listState.area) setScope('all');   // an area lists all of its patches, not just its top-10 ones
-      renderList();
-      if (listState.area) {
+  // ---- bar charts that filter the list: by zone or village, by distance to the marsh --
+  function hbarsHtml(kind, groups, cls) {
+    var most = Math.max.apply(null, groups.map(function (g) { return g.ha; }));
+    return groups.map(function (g) {
+      var n = g.ranks.length;
+      return '<button type="button" class="hbar' + (cls ? ' ' + cls : '') + '" data-kind="' + kind + '" data-value="' + esc(g.value) + '" aria-pressed="false">' +
+        '<span class="hbar-name">' + esc(g.label) + '<small>' + n + (n === 1 ? ' patch' : ' patches') + '</small></span>' +
+        '<span class="hbar-track" aria-hidden="true"><i style="width:' + (g.ha / most * 100).toFixed(1) + '%"></i></span>' +
+        '<span class="hbar-val">' + ha(g.ha) + ' ha</span></button>';
+    }).join('');
+  }
+  function wireBars(box, fit) {
+    box.querySelectorAll('.hbar').forEach(function (b) {
+      b.addEventListener('click', function () {
+        var f = listState.filter;
+        var same = f && f.kind === b.dataset.kind && f.value === b.dataset.value;
+        listState.filter = same ? null : { kind: b.dataset.kind, value: b.dataset.value };
+        if (listState.filter) setScope('all');   // a filter lists all of its patches, not just its top-10 ones
+        renderList();
+        if (!listState.filter) return;
         scrollToEl($('list-title'));
-        if (mapApi) mapApi.fitRanks(a.ranks);
-      }
+        if (mapApi) fit(all.filter(function (p) { return passes(p, listState.filter); }).map(function (p) { return p.rank; }));
+      });
     });
+  }
+  var areas = core.byArea(all).map(function (a) { return { value: a.area, label: a.area, ha: a.ha, ranks: a.ranks }; });
+  $('areas').innerHTML = hbarsHtml('area', areas);
+  wireBars($('areas'), function (ranks) { mapApi.fitRanks(ranks); });
+
+  // inside the outline counts the flagged land inside it; the other rows count whole patches
+  var marshGroups = ['inside', 'zone', 'outside'].map(function (k) {
+    var ps = all.filter(function (p) { return core.marshStatus(p, ZONE) === k; });
+    return { value: k, label: MARSH_TEXT[k], ha: sum(ps), ranks: ps.map(function (p) { return p.rank; }) };
   });
+  $('marsh-bars').innerHTML = hbarsHtml('marsh', marshGroups, 'marsh-bar');
+  wireBars($('marsh-bars'), function (ranks) { mapApi.showMarsh(ranks); });
+
+  // ---- when the 28.1 ha was built over: hectares per season, tap to see it ----------
+  var sinceYears = YEARS.slice(1, -1);   // 2019 … 2025: 2018 is the baseline, and 2026 adds none by the rule
+  var sinceMost = Math.max.apply(null, sinceYears.map(function (y) { return meta.built_since_ha[y] || 0; }));
+  var sinceChart = $('since-chart');
+  sinceChart.innerHTML = sinceYears.map(function (y) {
+    var v = meta.built_since_ha[y] || 0, recent = +y >= 2023;
+    return '<button type="button" class="col' + (recent ? ' on' : '') + '" data-year="' + y + '" aria-label="' + y + ': ' + v.toFixed(1) +
+      ' ha first built over. Show this season on the map">' +
+      '<span class="col-val">' + v.toFixed(1) + '</span>' +
+      '<span class="col-bar" style="height:' + (v / sinceMost * 80).toFixed(1) + 'px"></span>' +
+      '<span class="col-year">' + y + '</span></button>';
+  }).join('');
+  sinceChart.querySelectorAll('.col').forEach(function (b) {
+    b.addEventListener('click', function () { if (mapApi) mapApi.showYear(b.dataset.year); });
+  });
+  $('since-take').innerHTML = '<b>' + recentHa.toFixed(1) + '&nbsp;ha, ' + Math.round(recentHa / meta.lost_ha * 100) +
+    '% of it, in the last three seasons (2023–2025).</b> The filling is speeding up.';
+
+  // ---- after the floods -------------------------------------------------------
+  $('flood-text').innerHTML = 'A dry-season image shows the marsh at its smallest. On <b>' + floodDay + '</b>, the clearest image after ' +
+    'Chennai\'s November 2021 floods, the AI labels at least <b>' + Math.round(meta.monsoon.wet_ha).toLocaleString('en-IN') +
+    '&nbsp;ha</b> of the study area water or marsh, against ' + Math.round(meta.wet_ha_before).toLocaleString('en-IN') +
+    '&nbsp;ha in the 2018 dry season. <b>' + floodWet.length + ' of the flagged patches</b> (' + ha1(sum(floodWet)) +
+    '&nbsp;ha) were still at least half water or marsh that day. All of them are buildings now.';
+
+  // ---- what the lost marsh could hold: a what-if with a depth the reader picks ------
+  var depth = $('depth');
+  function storageText() {
+    var d = +depth.value, s = core.storage(meta.lost_ha, d);
+    $('depth-out').textContent = d + ' m';
+    $('calc-litres').textContent = core.indianLitres(s.litres);
+    $('calc-pools').textContent = 'about ' + Math.round(s.pools).toLocaleString('en-IN') + ' Olympic swimming pools, over ' + meta.lost_ha + ' ha at ' + d + ' m';
+  }
+  depth.addEventListener('input', storageText);
+  storageText();
 
   // ---- why these years: Dynamic World images per dry season --------------------
   var perYear = meta.dw_images_by_year || {};
@@ -197,7 +284,7 @@
       option.hidden = option.disabled = false;
       $('sort').value = listState.sort = 'distance';
       listState.from = here;
-      listState.area = null;
+      listState.filter = null;
       setScope('all');
       renderList();
       var nearest = core.sortPatches(all, 'distance', here)[0];
@@ -227,13 +314,14 @@
   map.attributionControl.setPrefix('<a href="https://leafletjs.com">Leaflet</a>');
   L.control.zoom({ position: 'topright' }).addTo(map);
 
-  // Stacking: basemap (tilePane) < 2026 < 2018 < place names < patches (overlayPane)
+  // Stacking: basemap (tilePane) < right / single season < left season < place names < marsh outline < patches (overlayPane)
   map.createPane('after').style.zIndex = 240;
   map.createPane('before').style.zIndex = 250;
   map.createPane('names').style.zIndex = 350;
+  map.createPane('marsh').style.zIndex = 380;
   map.getPane('names').style.pointerEvents = 'none';
+  map.getPane('marsh').style.pointerEvents = 'none';
   var paneBefore = map.getPane('before');
-  var paneAfter = map.getPane('after');
 
   // A page opened in a hidden tab or pane has a 0 × 0 map, and fitting the
   // study area into that zooms all the way in. Until the map has a real size,
@@ -272,57 +360,85 @@
     map.getPane('names').style.display = map.getZoom() < 12 ? 'none' : '';
   }
 
+  // ---- the images: one per side of the divider and per layer type --------------------
+  // Each is pointed at whichever season is shown. Photos show their light copy first
+  // (analysis/web_images.py); the full image replaces it once loaded, except while the
+  // years are playing, when the light copies keep up. The browser keeps the old picture
+  // on screen until the new one is ready, so switching seasons never flashes.
   var imgAttr = 'Contains modified Copernicus Sentinel data · Dynamic World';
-  // `full`: a light copy (analysis/web_images.py) shows first, then the full image
-  // replaces it; the browser keeps the light one on screen until the full one is ready.
-  function overlay(file, pane, alt, cls, full) {
-    var layer = L.imageOverlay('data/' + file, box, { pane: pane, alt: alt, attribution: imgAttr, className: cls || '' });
-    if (full) layer.once('load', function () { layer.setUrl('data/' + full); });
-    return layer;
+  function src(view, key, full) {
+    return 'data/' + (view === 'labels' ? 'labels_' + key : 'photo_' + key + (full ? '' : '_light')) + '.webp';
   }
-  var images = {
-    photo: {
-      before: overlay('photo_2018_light.webp', 'before', 'Sentinel-2 satellite image, Feb–May 2018', '', 'photo_2018.webp'),
-      after: overlay('photo_2026_light.webp', 'after', 'Sentinel-2 satellite image, Feb–May 2026', '', 'photo_2026.webp')
-    },
-    labels: {
-      before: overlay('labels_2018.webp', 'before', 'AI land labels, 2018', 'dw-img'),
-      after: overlay('labels_2026.webp', 'after', 'AI land labels, 2026', 'dw-img')
+  function altFor(view, key) {
+    return (view === 'labels' ? 'AI land labels, ' : 'Sentinel-2 satellite image, ') + keyLong(key);
+  }
+  var slots = {};
+  function slot(view, pane) {
+    var k = view + '-' + pane;
+    if (!slots[k]) slots[k] = { view: view, pane: pane, key: null, layer: null, ready: false, full: false };
+    return slots[k];
+  }
+  function upgrade(s) {
+    var full = src('photo', s.key, true);
+    if (s.layer._url !== full) s.layer.setUrl(full);
+  }
+  function point(s, key, full) {
+    s.full = full && s.view === 'photo';
+    if (s.key === key) { if (s.full && s.ready) upgrade(s); return; }
+    s.key = key;
+    s.ready = false;
+    var url = src(s.view, key, false);
+    if (!s.layer) {
+      s.layer = L.imageOverlay(url, box, { pane: s.pane, alt: altFor(s.view, key), attribution: imgAttr, className: s.view === 'labels' ? 'dw-img' : '' });
+      s.layer.on('load', function () { s.ready = true; if (s.full) upgrade(s); checkLoaded(); });
+      s.layer.on('error', function () { setNote('A satellite image did not load. Check the connection and reload the page.', true); });
+    } else {
+      s.layer.setUrl(url);
+      if (s.layer.getElement()) s.layer.getElement().alt = altFor(s.view, key);
     }
-  };
-  // a small status line until the images on screen have loaded
-  var loaded = {};
-  function trackLoad(layer, key) {
-    layer.on('load', function () { loaded[key] = true; checkLoaded(); });
-    layer.on('error', function () { setNote('A satellite image did not load. Check the connection and reload the page.', true); });
   }
-  Object.keys(images).forEach(function (v) {
-    Object.keys(images[v]).forEach(function (y) { trackLoad(images[v][y], v + y); });
-  });
+  function shown() {
+    return Object.keys(slots).map(function (k) { return slots[k]; }).filter(function (s) { return s.layer && map.hasLayer(s.layer); });
+  }
+  // a small status line until the images on screen have loaded
   function checkLoaded() {
-    if (note.classList.contains('error')) return;
-    var need = [state.view + 'before', state.view + 'after'];
-    var done = need.every(function (k) { return loaded[k]; });
+    if (note.classList.contains('error') || playing) return;
+    var done = shown().every(function (s) { return s.ready; });
     setNote(done ? '' : (state.view === 'labels' ? 'Loading AI labels…' : 'Loading satellite images…'));
     if (done) { connection(); addBasemap(); }
   }
+  // the year player shows every season in turn, so fetch their light copies first
+  var preloaded = {};
+  function preload(view, done) {
+    var keys = YEARS.filter(function (y) { return !preloaded[view + y]; });
+    var left = keys.length;
+    if (!left) { done(); return; }
+    var timer = setTimeout(done, 4000);   // a slow connection plays anyway; the old season stays until the next arrives
+    keys.forEach(function (y) {
+      var img = new Image();
+      img.onload = img.onerror = function () {
+        preloaded[view + y] = true;
+        if (--left === 0) { clearTimeout(timer); done(); }
+      };
+      img.src = src(view, y, false);
+    });
+  }
 
-  // ---- 2018 / 2026 compare ------------------------------------------------
+  // ---- compare two seasons -------------------------------------------------
   // The divider lives in its own pane (above the pins, below popups), so it is
   // placed in layer coordinates and moved along with the map.
   var container = map.getContainer();
   map.createPane('swipe').style.zIndex = 660;
   var swipe = L.DomUtil.create('div', 'swipe', map.getPane('swipe'));
-  swipe.innerHTML = '<span class="year-tag before">2018</span><span class="year-tag after">2026</span>' +
-    '<div class="knob" role="slider" tabindex="0" aria-label="Compare years: 2018 on the left, 2026 on the right"' +
-    ' aria-valuemin="0" aria-valuemax="100" aria-valuenow="50" aria-valuetext="50% of the map shows 2018">⇔</div>';
+  swipe.innerHTML = '<span class="year-tag before"></span><span class="year-tag after"></span>' +
+    '<div class="knob" role="slider" tabindex="0" aria-valuemin="0" aria-valuemax="100" aria-valuenow="50">⇔</div>';
   var knob = swipe.querySelector('.knob');
   var singleTag = L.DomUtil.create('div', 'single-tag', container);
   L.DomEvent.disableClickPropagation(swipe);
   L.DomEvent.disableScrollPropagation(swipe);
 
   function clip() {
-    if (state.year !== 'compare') { paneBefore.style.clip = ''; return; }
+    if (state.mode !== 'compare') { paneBefore.style.clip = ''; return; }
     var size = map.getSize();
     var nw = map.containerPointToLayerPoint([0, 0]);
     var se = map.containerPointToLayerPoint(size);
@@ -332,11 +448,15 @@
     swipe.style.top = nw.y + 'px';
     swipe.style.height = size.y + 'px';
   }
+  function knobText() {
+    var pct = Math.round(state.pos * 100);
+    knob.setAttribute('aria-label', 'Compare: ' + keyLong(state.left) + ' on the left, ' + keyLong(state.right) + ' on the right');
+    knob.setAttribute('aria-valuenow', pct);
+    knob.setAttribute('aria-valuetext', pct + '% of the map shows ' + keyName(state.left));
+  }
   function setPos(p) {
     state.pos = Math.max(0.02, Math.min(0.98, p));
-    var pct = Math.round(state.pos * 100);
-    knob.setAttribute('aria-valuenow', pct);
-    knob.setAttribute('aria-valuetext', pct + '% of the map shows 2018');
+    knobText();
     clip();
   }
   var dragging = false;
@@ -379,6 +499,61 @@
     sweepId = requestAnimationFrame(frame);
   }
 
+  // the two seasons to compare: every dry season, and the day after the floods
+  ['left', 'right'].forEach(function (side) {
+    var sel = $(side);
+    sel.innerHTML = '<optgroup label="Dry season (Feb–May)">' + YEARS.map(function (y) { return '<option value="' + y + '">' + y + '</option>'; }).join('') +
+      '</optgroup><optgroup label="After the floods"><option value="monsoon">' + floodDay + '</option></optgroup>';
+    sel.addEventListener('change', function () { endTour(); state[side] = sel.value; applyLayers(); writeHash(); });
+  });
+
+  // ---- year by year ---------------------------------------------------------------
+  var range = $('year-range');
+  range.min = FIRST;
+  range.max = LAST;
+  $('tb-ticks').innerHTML = YEARS.map(function (y) { return '<span>’' + y.slice(2) + '</span>'; }).join('');
+  var playBtn = $('play');
+  var playing = false, playTimer = null;
+  function yearText() {
+    var y = state.year;
+    $('year-out').innerHTML = '<b>' + y + '</b><span>' + ha1(builtBy[y]) + ' of ' + meta.lost_ha + ' ha built over</span>';
+    range.value = y;
+    range.setAttribute('aria-valuetext', y + ': ' + ha1(builtBy[y]) + ' of ' + meta.lost_ha + ' hectares built over');
+  }
+  function setPlaying(on) {
+    playing = on;
+    clearTimeout(playTimer);
+    playBtn.classList.toggle('on', on);
+    playBtn.setAttribute('aria-label', on ? 'Pause' : 'Play the dry seasons ' + FIRST + ' to ' + LAST);
+    if (!on) { applyLayers(); return; }   // stopped: the full image of this season
+    if (state.year === LAST) state.year = FIRST;
+    preload(state.view, function () {
+      if (!playing) return;
+      showSeason(state.year);
+      tick();
+    });
+  }
+  function tick() {
+    playTimer = setTimeout(function () {
+      if (!playing) return;
+      if (state.year === LAST) { setPlaying(false); return; }
+      showSeason(String(+state.year + 1));
+      tick();
+    }, calm.matches ? 1600 : 1100);
+  }
+  function showSeason(y) {
+    state.year = y;
+    if (state.mode !== 'single') { state.mode = 'single'; check('mode', 'single'); }
+    applyLayers();
+    writeHash();
+  }
+  playBtn.addEventListener('click', function () {
+    endTour();
+    if (state.mode !== 'single') showSeason(state.year);
+    setPlaying(!playing);
+  });
+  range.addEventListener('input', function () { endTour(); setPlaying(false); showSeason(range.value); });
+
   // ---- legend ---------------------------------------------------------------
   // Starts folded on phones, where it would cover a third of the map;
   // opens by itself when the AI labels are switched on, since their colours need the key.
@@ -401,30 +576,51 @@
   };
   legend.update = function () {
     var html = '';
+    var flood = state.mode === 'compare' && (state.left === 'monsoon' || state.right === 'monsoon');
     if (state.patches) {
-      html += '<div class="row"><i class="patch"></i><span class="long">Flagged: water or marsh in 2018 → buildings in 2025 and 2026</span>' +
-        '<span class="short">Flagged patch</span></div>';
+      if (state.mode === 'single') {
+        html += '<div class="row"><i class="patch"></i><span>Flagged, built over by ' + state.year + '</span></div>' +
+          '<div class="row"><i class="patch later"></i><span>Flagged, built over later</span></div>';
+      } else {
+        html += '<div class="row"><i class="patch"></i><span class="long">Flagged: water or marsh in 2018 → buildings in 2025 and 2026</span>' +
+          '<span class="short">Flagged patch</span></div>';
+      }
+    }
+    if (state.marsh) {
+      html += '<div class="row"><i class="marsh"></i><span>Protected marsh (OpenStreetMap outline)</span></div>' +
+        '<div class="row"><i class="marsh zone"></i><span>1 km zone around it</span></div>';
     }
     if (state.view === 'labels') {
       html += '<div class="grid">' + meta.labels.map(function (l) {
         return '<div class="row"><i style="background:' + l.color + '"></i>' + esc(l.name) + '</div>';
-      }).join('') + '</div>';
+      }).join('') + (flood ? '<div class="row"><i class="cloud"></i>cloud, no label</div>' : '') + '</div>';
     }
     html += '<div class="row"><i class="dot"></i><span>Sathyabama (DEXATHON venue)</span></div>';
     html += '<div class="src">' + (state.view === 'labels'
-      ? 'AI labels: Dynamic World, most common label in Feb–May'
-      : 'Sentinel-2, median of Feb–May') + '</div>';
+      ? 'AI labels: Dynamic World, most common label in Feb–May' + (flood ? '; one image on ' + floodDay : '')
+      : 'Sentinel-2, median of Feb–May' + (flood ? '; one image on ' + floodDay : '')) + '</div>';
     this._body.innerHTML = html;
   };
   legend.addTo(map);
   legend.setOpen(!narrow.matches);
 
   // ---- flagged patches ------------------------------------------------------
-  var STYLE = { color: '#ff1a1a', weight: 1.5, opacity: 1, fillColor: '#ff1a1a', fillOpacity: 0.35 };
+  var STYLE = { color: '#ff1a1a', weight: 1.5, opacity: 1, fillColor: '#ff1a1a', fillOpacity: 0.35, dashArray: null };
+  // year by year: a patch not yet built over in the season shown is only outlined
+  var LATER = { color: '#ff1a1a', weight: 1.5, opacity: 0.95, fillColor: '#ff1a1a', fillOpacity: 0, dashArray: '3 3' };
   var HOVER = { weight: 3, fillOpacity: 0.55 };
-  var ON = { color: '#FFD400', weight: 3, fillColor: '#ff1a1a', fillOpacity: 0.5 };
+  var ON = { color: '#FFD400', weight: 3, fillColor: '#ff1a1a', fillOpacity: 0.5, dashArray: null };
   var byRank = {};
   var selected = null;
+  function styleOf(p) {
+    return state.mode === 'single' && +state.year < core.builtFrom(p) ? LATER : STYLE;
+  }
+  function restyle() {
+    Object.keys(byRank).forEach(function (r) {
+      var hit = byRank[r];
+      if (hit !== selected) hit.layer.setStyle(styleOf(hit.feature.properties));
+    });
+  }
 
   // 2018 | 2026 close-up (analysis/topten_closeups.py and patch_details.py → app_closeups.py)
   function figureHtml(p) {
@@ -433,17 +629,45 @@
       '<span class="year-tag before">2018</span><span class="year-tag after">2026</span></a>' +
       '<figcaption>600&nbsp;m around the patch, outlined in red</figcaption></figure>';
   }
+  // What the AI saw on the patch each dry season: buildings (bottom), other, water or marsh (top)
+  function timelineHtml(p) {
+    var since = core.builtFrom(p);
+    var cols = YEARS.map(function (y, i) {
+      var wet = p.wet_by_year[i], built = p.built_by_year[i], other = Math.max(0, 1 - wet - built);
+      return '<span class="tl-col' + (+y === since ? ' since' : '') + '" title="' + y + ': ' + pct(built) + ' buildings, ' + pct(wet) + ' water or marsh">' +
+        '<span class="tl-bar"><i class="w" style="height:' + pct(wet) + '"></i><i class="o" style="height:' + pct(other) + '"></i>' +
+        '<i class="b" style="height:' + pct(built) + '"></i></span><span class="tl-y">’' + y.slice(2) + '</span></span>';
+    }).join('');
+    var said = YEARS.map(function (y, i) { return y + ' ' + pct(p.built_by_year[i]); }).join(', ');
+    return '<div class="tl"><div class="tl-head"><span>Year by year</span><b>' +
+      (since >= 2025 ? 'Built over in 2025 and 2026' : 'Built over every season since ' + since) + '</b></div>' +
+      '<div class="tl-cols" role="img" aria-label="Share of the patch the AI labels buildings each dry season: ' + said + '">' + cols + '</div>' +
+      '<div class="tl-key" aria-hidden="true"><span><i class="w"></i>water or marsh</span><span><i class="o"></i>other</span><span><i class="b"></i>buildings</span></div></div>';
+  }
   // How sure the AI was: the three probabilities, the weakest of which sets the level
   function confHtml(p) {
     var low = core.weakest(p);
     function row(text, v) {
-      var pct = Math.round(v * 100);
       return '<div class="conf-row' + (v === low ? ' weak' : '') + '"><span>' + text + '</span>' +
-        '<span class="meter" aria-hidden="true"><i style="width:' + pct + '%"></i></span><b>' + pct + '%</b></div>';
+        '<span class="meter" aria-hidden="true"><i style="width:' + pct(v) + '"></i></span><b>' + pct(v) + '</b></div>';
     }
-    return '<div class="conf"><div class="conf-head"><span>AI confidence</span>' + confPill(p, true) + '</div>' +
+    // folded, so the popup fits a short map; it grows upwards when opened
+    return '<details class="conf"><summary class="conf-head"><span>AI confidence</span>' + confPill(p, true) + '<span class="conf-why">why?</span></summary>' +
       row('Water or marsh, 2018', p.p_wet_2018) + row('Buildings, 2025', p.p_built_2025) + row('Buildings, 2026', p.p_built_2026) +
-      '<div class="conf-src">Dynamic World\'s average probability over the patch and season. The lowest sets the level.</div></div>';
+      '<div class="conf-src">Dynamic World\'s average probability over the patch and season. The lowest sets the level.</div></details>';
+  }
+  // The patch against the protected marsh, the 2021 floods and Landsat's water history
+  function contextHtml(p) {
+    var rows = [];
+    var st = core.marshStatus(p, ZONE);
+    rows.push(['marsh ' + st, st === 'inside'
+      ? '<b>' + (p.marsh_share >= 0.99 ? 'Inside' : pct(p.marsh_share) + ' inside') + '</b> the protected marsh outline'
+      : st === 'zone' ? '<b>' + core.formatDistance(p.marsh_distance_m) + '</b> from the protected marsh, inside the 1 km zone'
+        : core.formatDistance(p.marsh_distance_m) + ' from the protected marsh']);
+    if (p.wet_monsoon === null) rows.push(['flood', 'Under cloud on ' + floodDay + ', after the floods']);
+    else rows.push(['flood', '<b>' + pct(p.wet_monsoon) + '</b> water or marsh on ' + floodDay + ', after the floods']);
+    if (p.landsat_water_ever >= 0.1) rows.push(['sat', 'Landsat saw open water on <b>' + pct(p.landsat_water_ever) + '</b> of it, 1984–2021']);
+    return '<ul class="ctx">' + rows.map(function (r) { return '<li class="' + r[0] + '">' + r[1] + '</li>'; }).join('') + '</ul>';
   }
   function popupHtml(p) {
     return '<div class="pop">' +
@@ -452,20 +676,22 @@
       (p.site ? ' <span class="pill site">Site ' + p.site + '</span>' : '') + '</div>' +
       figureHtml(p) +
       '<p>' + (p.finding ? '<b>Checked by eye:</b> ' + esc(p.finding) + '.' : 'Water or marsh in 2018 → buildings in 2025 and 2026. Not checked by eye yet.') + '</p>' +
+      timelineHtml(p) +
+      contextHtml(p) +
       confHtml(p) +
-      '<div class="pills"><span class="pill check">Possible change, needs a ground check</span></div>' +
-      '<a href="' + gmaps(p) + '" target="_blank" rel="noopener">Open in Google Maps (satellite) →</a>' +
+      '<div class="pop-foot"><span class="pill check">Possible change, needs a ground check</span>' +
+      '<a href="' + gmaps(p) + '" target="_blank" rel="noopener">Google Maps (satellite) →</a></div>' +
       '</div>';
   }
 
   var patches = L.geoJSON(D.patches, {
-    style: function () { return STYLE; },
+    style: function (f) { return styleOf(f.properties); },
     onEachFeature: function (f, layer) {
       var rank = f.properties.rank;
       byRank[rank] = { feature: f, layer: layer };
       layer.on('click', function (e) { L.DomEvent.stop(e); endTour(); select(rank, { latlng: e.latlng }); });
       layer.on('mouseover', function () { if (!selected || selected.layer !== layer) layer.setStyle(HOVER); });
-      layer.on('mouseout', function () { if (!selected || selected.layer !== layer) layer.setStyle(STYLE); });
+      layer.on('mouseout', function () { if (!selected || selected.layer !== layer) layer.setStyle(styleOf(f.properties)); });
     }
   }).addTo(map);
 
@@ -486,6 +712,41 @@
   L.circleMarker([meta.campus[1], meta.campus[0]], {
     radius: 6, color: '#1B2333', weight: 2, fillColor: '#FFD400', fillOpacity: 1
   }).bindTooltip('Sathyabama · DEXATHON venue').addTo(map);
+
+  // ---- the protected marsh (analysis/context_layers.py), loaded when first shown ------
+  var marshLayer = null, marshLoading = null;
+  function loadMarsh() {
+    if (marshLoading) return marshLoading;
+    marshLoading = fetch('data/marsh_boundary.geojson').then(function (r) {
+      if (!r.ok) throw new Error(r.status);
+      return r.json();
+    }).then(function (geo) {
+      marshLayer = L.geoJSON(geo, {
+        pane: 'marsh', interactive: false,
+        style: function (f) {
+          return f.properties.kind === 'zone'
+            ? { color: '#00E0C6', weight: 2, opacity: 0.95, dashArray: '6 5', fill: false }
+            : { color: '#00E0C6', weight: 3, opacity: 1, fillColor: '#00E0C6', fillOpacity: 0.08 };
+        }
+      });
+      return marshLayer;
+    });
+    marshLoading.catch(function () { marshLoading = null; });
+    return marshLoading;
+  }
+  function setMarsh(on) {
+    state.marsh = on;
+    $('show-marsh').checked = on;
+    legend.update();
+    writeHash();
+    if (!on) { if (marshLayer) map.removeLayer(marshLayer); return Promise.resolve(); }
+    return loadMarsh().then(function (layer) {
+      if (state.marsh && !map.hasLayer(layer)) layer.addTo(map);
+    }, function () {
+      setMarsh(false);
+      say('The marsh outline did not load. Check the connection.');
+    });
+  }
 
   // Neighbouring patches put their pins on top of each other at the opening zoom
   // (#1 and #6, #2 and #5): nudge the later one aside. Only zooming changes this.
@@ -515,7 +776,7 @@
         boxes.push([pt[0] + s[0] - 2, pt[1] + s[1] - 2, pt[0] + s[0] + PIN + 2, pt[1] + s[1] + PIN + 2]);
       });
     }
-    if (state.year === 'compare') {
+    if (state.mode === 'compare') {
       var size = map.getSize(), kx = size.x * state.pos, ky = size.y / 2;
       boxes.push([kx - 26, ky - 26, kx + 26, ky + 26]);
     }
@@ -539,10 +800,12 @@
   map.on('moveend resize', declutter);
 
   // the bottom padding keeps popups clear of the legend button and the credits line
-  var popup = L.popup({ autoPanPaddingTopLeft: [10, 50], autoPanPaddingBottomRight: [10, 48] });
+  var popup = L.popup({ autoPanPaddingTopLeft: [10, 10], autoPanPaddingBottomRight: [10, 48] });
+  // the tallest the popup may be: it scrolls inside a short map rather than running off it
+  function popupRoom() { return Math.max(220, map.getSize().y - 130); }
 
   function unmark(hit) {
-    hit.layer.setStyle(STYLE);
+    hit.layer.setStyle(styleOf(hit.feature.properties));
     if (hit.pin && hit.pin.getElement()) L.DomUtil.removeClass(hit.pin.getElement(), 'on');
   }
   function clearSelection() {
@@ -554,7 +817,7 @@
   }
   map.on('popupclose', function (e) { if (e.popup === popup) clearSelection(); });
   map.on('popupopen', function (e) {
-    if (narrow.matches) legend.setOpen(false);
+    if (narrow.matches || map.getSize().y < 760) legend.setOpen(false);   // it would cover the popup's foot
     // the close-up has a fixed shape, but re-place the popup once it arrives in case the font changed its height
     var img = e.popup.getElement().querySelector('.pop-fig img');
     if (img && !img.complete) img.addEventListener('load', function () { if (map.hasLayer(e.popup)) e.popup.update(); });
@@ -567,9 +830,25 @@
     var size = map.getSize();
     var room = Math.max(60, size.y - top - bottom);
     var z = Math.min(16, map.getBoundsZoom(b, false, L.point(80, size.y - room)));
-    var c = map.project(b.getCenter(), z).add([0, (bottom - top) / 2]);
-    map.flyTo(map.unproject(c, z), z, { duration: calm.matches ? 0 : 0.9 });
+    var c = map.unproject(map.project(b.getCenter(), z).add([0, (bottom - top) / 2]), z);
+    map.flyTo(c, z, { duration: calm.matches ? 0 : 0.9 });
+    return { center: c, zoom: z };
   }
+  // Run `then` once the map has arrived. A resize during the flight (the web font
+  // arriving and changing the toolbar's height, say) also ends with a moveend, so
+  // check where the map is rather than trusting the first one.
+  var arriving = null;
+  function whenThere(to, then) {
+    if (arriving) map.off('moveend', arriving);
+    arriving = function () {
+      if (Math.abs(map.getZoom() - to.zoom) > 0.01 || map.distance(map.getCenter(), to.center) > 5) return;
+      map.off('moveend', arriving);
+      arriving = null;
+      then();
+    };
+    map.on('moveend', arriving);
+  }
+  map.on('dragstart', function () { if (arriving) { map.off('moveend', arriving); arriving = null; } });
 
   function select(rank, opts) {
     var hit = byRank[rank];
@@ -584,32 +863,40 @@
     markList(rank);
     var p = hit.feature.properties;
     var b = hit.layer.getBounds();
-    var width = narrow.matches ? 250 : 300;
+    var width = narrow.matches ? 260 : 310;
     popup.options.maxWidth = popup.options.minWidth = width;
+    popup.options.maxHeight = popupRoom();
     // from the list, the popup sits on the patch's top edge so it doesn't cover it
     popup.setLatLng(opts.latlng || [b.getNorth(), b.getCenter().lng]).setContent(popupHtml(p));
     if (opts.fly) {
       var noPopup = opts.popup === false;
-      map.once('moveend', function () { if (selected === hit && !noPopup) popup.openOn(map); });
-      // room above the patch for the popup with its close-up and the AI confidence
-      flyInto(b, noPopup ? 50 : narrow.matches ? 330 : 430, opts.padBottom || 40);
+      // room above the patch for the popup and its tip
+      var to = flyInto(b, noPopup ? 50 : popupRoom() + 40, opts.padBottom || 30);
+      whenThere(to, function () { if (selected === hit && !noPopup) popup.openOn(map); });
     } else {
       popup.openOn(map);
     }
     writeHash();
   }
 
-  // ---- year, layer and the link that reopens them ---------------------------
-  var YEAR_IN = { '2018': 'before', compare: 'compare', '2026': 'after' };
-  var YEAR_OUT = { before: '2018', compare: 'compare', after: '2026' };
+  // ---- the link that reopens a view ------------------------------------------
   function writeHash() {
-    var h = core.hashFor({ patch: selected && selected.feature.properties.rank, year: YEAR_OUT[state.year], layer: state.view });
+    var h = core.hashFor({
+      patch: selected && selected.feature.properties.rank,
+      year: state.mode === 'single' ? state.year : 'compare', left: state.left, right: state.right,
+      layer: state.view, marsh: state.marsh
+    });
     if (h !== location.hash) history.replaceState(null, '', location.pathname + location.search + h);
   }
   function applyHash(fly) {
     var h = core.readHash(location.hash);
-    setYear(YEAR_IN[h.year] || 'compare');
+    setPlaying(false);
+    state.left = isKey(h.left) ? h.left : FIRST;
+    state.right = isKey(h.right) ? h.right : LAST;
+    if (YEARS.indexOf(h.year) >= 0) { state.mode = 'single'; state.year = h.year; } else state.mode = 'compare';
+    check('mode', state.mode);
     setView(h.layer === 'labels' ? 'labels' : 'photo');
+    if ((h.marsh === '1') !== state.marsh) setMarsh(h.marsh === '1');
     if (h.patch && byRank[h.patch]) select(h.patch, { fly: fly });
     else if (selected) map.closePopup();
   }
@@ -617,19 +904,33 @@
 
   // ---- toolbar ------------------------------------------------------------
   function applyLayers() {
+    var sides = state.mode === 'compare' ? { before: state.left, after: state.right } : { after: state.year };
     ['photo', 'labels'].forEach(function (v) {
-      ['before', 'after'].forEach(function (y) {
-        var layer = images[v][y];
-        if (v === state.view && !map.hasLayer(layer)) layer.addTo(map);
-        if (v !== state.view && map.hasLayer(layer)) map.removeLayer(layer);
+      ['before', 'after'].forEach(function (pane) {
+        var s = slot(v, pane);
+        var key = v === state.view && sides[pane];
+        if (key) {
+          point(s, key, !playing);
+          if (!map.hasLayer(s.layer)) s.layer.addTo(map);
+        } else if (s.layer && map.hasLayer(s.layer)) {
+          map.removeLayer(s.layer);
+        }
       });
     });
-    paneBefore.style.display = state.year === 'after' ? 'none' : '';
-    paneAfter.style.display = state.year === 'before' ? 'none' : '';
-    swipe.hidden = state.year !== 'compare';
-    singleTag.hidden = state.year === 'compare';
-    singleTag.innerHTML = state.year === 'before'
-      ? '<span class="year-tag before">2018</span>' : '<span class="year-tag after">2026</span>';
+    var compare = state.mode === 'compare';
+    paneBefore.style.display = compare ? '' : 'none';
+    swipe.hidden = !compare;
+    singleTag.hidden = compare;
+    swipe.firstChild.textContent = keyName(state.left);
+    swipe.childNodes[1].textContent = keyName(state.right);
+    singleTag.innerHTML = '<span class="year-tag after">' + esc(keyLong(state.year)) + '</span>';
+    $('left').value = state.left;
+    $('right').value = state.right;
+    $('tb-compare').hidden = !compare;
+    $('tb-single').hidden = compare;
+    yearText();
+    knobText();
+    restyle();
     clip();
     legend.update();
     checkLoaded();
@@ -639,10 +940,14 @@
     var input = document.querySelector('input[name="' + name + '"][value="' + value + '"]');
     if (input) input.checked = true;
   }
-  function setYear(y) { state.year = y; check('year', y); applyLayers(); writeHash(); }
+  function setMode(m) {
+    if (m === 'compare') setPlaying(false);
+    state.mode = m; check('mode', m); applyLayers(); writeHash();
+  }
   function setView(v) {
     state.view = v; check('view', v); applyLayers(); writeHash();
     if (v === 'labels') legend.setOpen(true);
+    if (playing) preload(v, function () {});
   }
   function setPatches(on) {
     state.patches = on;
@@ -653,13 +958,14 @@
     if (on) spreadPins();
     declutter();
   }
-  document.querySelectorAll('input[name="year"]').forEach(function (r) {
-    r.addEventListener('change', function () { setYear(r.value); });
+  document.querySelectorAll('input[name="mode"]').forEach(function (r) {
+    r.addEventListener('change', function () { endTour(); setMode(r.value); });
   });
   document.querySelectorAll('input[name="view"]').forEach(function (r) {
     r.addEventListener('change', function () { setView(r.value); });
   });
   $('show-patches').addEventListener('change', function (e) { setPatches(e.target.checked); });
+  $('show-marsh').addEventListener('change', function (e) { setMarsh(e.target.checked); });
   $('show-names').addEventListener('change', function (e) {
     if (e.target.checked) { names.addTo(map); declutter(); } else map.removeLayer(names);
   });
@@ -691,18 +997,26 @@
     home(true);
   });
 
-  // ---- hooks for the panel: list rows, area bars and "near me" ------------------
+  // ---- hooks for the panel: list rows, charts, cards and "near me" -------------------
   var you = null;
+  function fitRanks(ranks, pad) {
+    var b = L.latLngBounds([]);
+    ranks.forEach(function (r) { b.extend(byRank[r].layer.getBounds()); });
+    map.closePopup();
+    showMap();
+    map.flyToBounds(b, { padding: [pad || 40, pad || 40], maxZoom: 16, duration: calm.matches ? 0 : 0.9 });
+  }
+  function compareFlood() {
+    setPlaying(false);
+    state.mode = 'compare'; state.left = 'monsoon'; state.right = LAST;
+    check('mode', 'compare');
+    setView('photo');
+    setPos(0.5);
+  }
   mapApi = {
     say: say,
     pick: function (rank) { endTour(); showMap(); select(rank, { fly: true }); },
-    fitRanks: function (ranks) {
-      var b = L.latLngBounds([]);
-      ranks.forEach(function (r) { b.extend(byRank[r].layer.getBounds()); });
-      map.closePopup();
-      showMap();
-      map.flyToBounds(b, { padding: [40, 40], maxZoom: 16, duration: calm.matches ? 0 : 0.9 });
-    },
+    fitRanks: fitRanks,
     showYou: function (here, rank) {
       var at = [here.lat, here.lon];
       if (!you) {
@@ -712,29 +1026,63 @@
       map.closePopup();
       showMap();
       map.flyToBounds(L.latLngBounds([at]).extend(byRank[rank].layer.getBounds()), { padding: [50, 50], maxZoom: 16, duration: calm.matches ? 0 : 0.9 });
+    },
+    showYear: function (y) {
+      endTour();
+      setPlaying(false);
+      map.closePopup();
+      showSeason(y);
+      showMap();
+      say(y + ': ' + ha1(meta.built_since_ha[y] || 0) + ' ha first built over this season');
+    },
+    showMarsh: function (ranks) {
+      endTour();
+      setMarsh(true);
+      if (ranks) fitRanks(ranks);
+      else { map.closePopup(); showMap(); home(true); }
+    },
+    showFlood: function () {
+      endTour();
+      map.closePopup();
+      compareFlood();
+      showMap();
+      home(true);
     }
   };
+  $('marsh-show').addEventListener('click', function () { mapApi.showMarsh(); });
+  $('flood-show').addEventListener('click', function () { mapApi.showFlood(); });
 
-  // ---- guided tour: three steps over the real map ---------------------------
+  // ---- guided tour: six steps over the real map ---------------------------
   var coach = $('coach');
   var tourStep = -1;
+  var marshNear = nearMarsh.length + ' of ' + all.length;
+  // each step starts clean: no popup, and no patch left selected by step 4 (on a phone it has no popup to close)
+  function fresh() { map.closePopup(); clearSelection(); }
   var TOUR = [
     {
       title: 'Compare 2018 and 2026',
       text: 'Drag the white divider. Left of it is the 2018 dry season, right of it is 2026: real Sentinel-2 satellite images of the same ground.',
       short: 'Drag the white divider: 2018 on the left, 2026 on the right. Real satellite images of the same ground.',
-      run: function () { map.closePopup(); setView('photo'); setYear('compare'); home(true); setTimeout(sweep, calm.matches ? 0 : 900); }
+      run: function () { fresh(); setPlaying(false); state.left = FIRST; state.right = LAST; setMode('compare'); setView('photo'); home(true); setTimeout(sweep, calm.matches ? 0 : 900); }
+    },
+    {
+      title: 'Watch it year by year',
+      text: 'Every dry season from 2018 to 2026 plays in turn. A dashed patch is still water or marsh that season; it fills red from the year it was built over. ' +
+        Math.round(recentHa / meta.lost_ha * 100) + '% of the 28.1 ha went in the last three seasons.',
+      short: 'Every dry season, 2018 to 2026. Dashed patches fill red from the year they were built over. ' +
+        Math.round(recentHa / meta.lost_ha * 100) + '% of it went in the last three seasons.',
+      run: function () { stopSweep(); fresh(); setView('photo'); state.year = FIRST; setMode('single'); setTimeout(function () { if (tourStep === 1) setPlaying(true); }, calm.matches ? 0 : 700); }
     },
     {
       title: 'See what the AI sees',
       text: 'Dynamic World, an AI model, labels every 10 m square: blue is water, purple is marsh, grey is buildings. Where blue or purple turned grey and stayed grey in 2025 and 2026, we flag it in red.',
       short: 'An AI model labels every 10 m square: blue water, purple marsh, grey buildings. Blue or purple that turned grey in 2025 and 2026 is flagged red.',
-      run: function () { stopSweep(); map.closePopup(); setView('labels'); setYear('compare'); }
+      run: function () { setPlaying(false); fresh(); state.left = FIRST; state.right = LAST; setMode('compare'); setView('labels'); }
     },
     {
       title: 'Open the biggest patch',
-      text: 'Patch #1, Perungudi: 10.92 ha of 2018 marsh, now cleared and built up. The close-up shows 2018 beside 2026. Like every patch, it is a possible change that needs a ground check.',
-      short: 'Patch #1, Perungudi: 10.92 ha of 2018 marsh, now cleared and built up. A possible change that needs a ground check.',
+      text: 'Patch #1, Perungudi: 10.92 ha of marsh until 2022, cleared from 2023, built over since 2024. The bars show what the AI saw there each season. Like every patch, it needs a ground check.',
+      short: 'Patch #1, Perungudi: 10.92 ha of marsh until 2022, built over since 2024. A possible change that needs a ground check.',
       // on a phone the popup would sit under this card, so the card carries the close-up instead
       figure: 1,
       run: function () {
@@ -742,6 +1090,18 @@
         if (narrow.matches) select(1, { fly: true, popup: false, padBottom: coach.offsetHeight + 20 });
         else select(1, { fly: true });
       }
+    },
+    {
+      title: 'The protected marsh',
+      text: marshNear + ' patches lie inside the protected marsh outline or within 1 km of it, the zone where the National Green Tribunal stopped new approvals in Sep 2025. Patch #1 lies inside the outline.',
+      short: marshNear + ' patches lie inside the protected marsh or within 1 km of it, where the Green Tribunal stopped new approvals in 2025.',
+      run: function () { fresh(); setView('photo'); setMarsh(true).then(function () { if (tourStep === 4) home(true); }); }
+    },
+    {
+      title: 'After the 2021 floods',
+      text: 'Left: ' + floodDay + ', after Chennai\'s November 2021 floods. Right: 2026. ' + floodWet.length + ' flagged patches were still water or marsh that day; all are buildings now. In the final round: alerts, citizen photo checks and complaint letters.',
+      short: 'Left: ' + floodDay + ', after the 2021 floods. Right: 2026. ' + floodWet.length + ' flagged patches held water that day; all are buildings now.',
+      run: function () { setMarsh(false); fresh(); compareFlood(); home(true); setTimeout(sweep, calm.matches ? 0 : 900); }
     }
   ];
   function showStep(i) {
@@ -771,7 +1131,6 @@
   $('coach-next').addEventListener('click', function () {
     if (tourStep >= TOUR.length - 1) {
       endTour();
-      if (selected && !map.hasLayer(popup)) popup.openOn(map);   // the phone tour showed the close-up in its card
       say('Tour done. Tap any patch or row to explore.');
     }
     else showStep(tourStep + 1);
