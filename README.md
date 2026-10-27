@@ -12,7 +12,21 @@ DEXATHON 2026 · Sustainability Development track · Software · Team Sternritte
 | **Project page** | <https://athulyapandian24.github.io/neerkatti/> |
 | **Open data** | [`patches.csv`](docs/app/data/patches.csv) (spreadsheet) and [`patches.geojson`](docs/app/data/patches.geojson) (outlines): every flagged patch with its zone or village, AI confidence, year built over, marsh distance and every season's shares |
 
-[![The NEERKATTI live map: 2018 and 2026 satellite images side by side, with the top 10 flagged patches numbered](docs/app/og-map.jpg)](https://athulyapandian24.github.io/neerkatti/app/)
+[![Patch 1 in Perungudi, every dry season from 2018 to 2026: marsh until 2022, buildings on all of it by 2025](docs/img/timelapse/p01_strip.jpg)](https://athulyapandian24.github.io/neerkatti/#timelapse)
+
+*Patch #1 in Perungudi, every dry season 2018–2026, with the share the AI labels buildings ([`analysis/patch_timelapse.py`](analysis/patch_timelapse.py)). Inside the protected marsh outline; a possible change that needs a ground check.*
+
+## Try it in 60 seconds
+
+| | What to do | Link |
+|---|---|---|
+| 1 | **Watch the tour.** Six steps that play by themselves (Pause, Back and Next work): compare, year by year, the AI's labels, the biggest patch, the protected marsh, the 2021 floods. | [`/app/?tour=1`](https://athulyapandian24.github.io/neerkatti/app/?tour=1) |
+| 2 | **Watch a patch.** Open patch #1 and press *Watch it 2018–2026*: the card folds to its season bars and the map plays the seasons up close. | [`/app/#patch-1`](https://athulyapandian24.github.io/neerkatti/app/#patch-1) |
+| 3 | **Ask the AI about any spot.** Tap anywhere on the map, flagged or not: the label the AI gave that 10 m square in every season, and what the rule makes of it. | [`/app/#layer=labels`](https://athulyapandian24.github.io/neerkatti/app/?intro=0#layer=labels) |
+| 4 | **Check the marsh.** 28 of 36 patches lie in the protected marsh or within 1 km of it. | [`/app/#marsh=1`](https://athulyapandian24.github.io/neerkatti/app/?intro=0#marsh=1) |
+| 5 | **Take the data.** Every patch with every season's shares, as a spreadsheet. | [`patches.csv`](docs/app/data/patches.csv) |
+
+It runs in any browser, on a phone too, and keeps working offline once opened.
 
 ## Results
 
@@ -36,15 +50,16 @@ The top-10 check is a visual check of 2018 | 2026 Sentinel-2 close-ups and curre
 | Working now (Round 2) | Built in the 24-hour final (4–5 Nov) |
 |---|---|
 | Every dry season 2018–2026: a year-by-year player in which each patch fills red from the season it was built over, or any two seasons side by side with a draggable divider | Alerts for new changes, first inside the protected marsh's 1 km zone |
-| AI land labels for every 10 m square, every season | Citizen photo check by a vision model |
-| All 36 flagged patches with 2018 \| 2026 close-ups, what the AI saw there each season, the year it was built over, zone or village names and an AI confidence level; the top 10 checked by eye | Complaint PDF in Tamil and English |
+| AI land labels for every 10 m square, every season; tap any spot to see its label in every season and what the rule makes of it | Citizen photo check by a vision model |
+| All 36 flagged patches with 2018 \| 2026 close-ups, what the AI saw there each season, the year it was built over, zone or village names and an AI confidence level; *Watch it 2018–2026* plays any patch's seasons up close; the top 10 checked by eye | Complaint PDF in Tamil and English |
 | The protected marsh (OpenStreetMap outline) and its 1 km zone; the marsh after the 2021 floods; Landsat's water history as a second opinion | Sentinel-1 radar through monsoon clouds |
 | Charts: hectares built over per season, flagged hectares by zone or village and by distance from the marsh; a what-if for the water the lost marsh could hold | |
-| A list you can sort by size, newest, confidence or area; "near me" (the location stays on the device); a 6-step guided tour; shareable links such as `#patch-4&year=2021&layer=labels&marsh=1` | |
-| Works offline once opened, and installs on a phone's home screen | |
-| Open CSV and GeoJSON; 30 consistency tests and 13 map-logic tests, run by GitHub Actions on every push | |
+| A list you can sort by size, newest, confidence or area; "near me" (the location stays on the device); a 6-step guided tour that plays itself; shareable links such as `#patch-4&year=2021&layer=labels&marsh=1` | |
+| Works offline once opened, every season included, and installs on a phone's home screen | |
+| Open CSV and GeoJSON; 33 consistency tests and 18 map-logic tests, run by GitHub Actions on every push | |
+| Extension points for the final: `window.NEERKATTI_API` lets each final-round feature live in its own file | |
 
-The DEXATHON rules say major features are built during the 24-hour final, so the right-hand column is a plan, not code.
+The DEXATHON rules say major features are built during the 24-hour final, so the right-hand column is a plan, not code. The hour-by-hour plan for four people, with risks, fallbacks and the data formats, is in [`docs/FINAL_ROUND_PLAN.md`](docs/FINAL_ROUND_PLAN.md).
 
 ## Architecture
 
@@ -105,6 +120,8 @@ Earth Engine map-tile links expire after a few hours, so [`analysis/app_assets.p
 
    We also tried Sentinel-1 radar from 6 Dec 2015, four days after the 2015 floods, but the flooded area came out bright, not dark (most likely water under marsh plants, and wind or rain on open water, sending the radar back), so a simple threshold found less water than in the dry season. That layer was dropped.
 
+10. **Ask the AI about any spot.** The map reads the AI label images it already shows (lossless WebP, one colour per label) at the tapped spot, for every season, in the browser: no server. It then applies the label test of the rule to that one square: water or marsh in 2018 and buildings in 2025 and 2026. The full rule also needs the square off the 20 m lake rim and inside a group of at least 10, so the popup says when a spot is part of a flagged patch.
+
 ## Why this area and these years
 
 | Dry season (Feb–May) | 2016 | 2017 | **2018** | 2019 | 2020 | 2021 | 2022 | 2023 | 2024 | **2025** | **2026** |
@@ -148,8 +165,9 @@ Steps added for the year-by-year map, run after step 3 (rebuild.py puts them in 
 | 3a | `.venv/Scripts/python analysis/year_by_year.py` | photos and AI labels for 2019–2025; each season's shares and `built_since` per patch; hectares per season |
 | 3b | `.venv/Scripts/python analysis/context_layers.py` | `marsh_boundary.geojson`, the 26 Dec 2021 photo and labels, marsh distance, flood, Landsat and WorldCover shares per patch |
 | 6a | `.venv/Scripts/python analysis/open_data.py` | `docs/app/data/patches.csv` (no Earth Engine) |
+| 7a | `.venv/Scripts/python analysis/patch_timelapse.py` | `docs/img/timelapse/`: patch #1 in every dry season, and the link previews `og.jpg` and `og-map.jpg` (numbers read from the data) |
 
-Or run them all with **`.venv/Scripts/python analysis/rebuild.py`** (`--list` shows the 12 steps, `--from 5` starts at step 5). The scripts in steps 2–4 import their neighbours, so run them from inside `analysis/` (rebuild.py does). `requirements.txt` pins the versions the published data was made with.
+Or run them all with **`.venv/Scripts/python analysis/rebuild.py`** (`--list` shows the 13 steps, `--from 5` starts at step 5). The scripts in steps 2–4 import their neighbours, so run them from inside `analysis/` (rebuild.py does). `requirements.txt` pins the versions the published data was made with.
 
 `analysis/spot_closeups.py` and `analysis/make_slide.py` made the Round 1 deck images. Without Python, paste [`earthengine/neerkatti_v1.js`](earthengine/neerkatti_v1.js) into the [Earth Engine Code Editor](https://code.earthengine.google.com) and press **Run** to get the same rule with a 2018 | 2026 wipe slider.
 
@@ -174,9 +192,11 @@ Then open <http://localhost:8765/app/>. Opening `docs/app/index.html` straight f
 - the Round 1 deck says the same (only when the deck file is present locally);
 - every patch has a close-up and an AI confidence level that follows from its probabilities, and the images-per-season note matches the data;
 - every season has its photo and labels; each patch's season shares follow the rule (water or marsh in 2018, buildings in 2025 and 2026); the hectares per season add up to 28.1; the marsh, flood and Landsat values are in range; the CSV matches the GeoJSON; and the year-by-year, marsh and flood numbers written on the page match the data;
+- the project page's season-by-season view of patch #1 matches the data, frame by frame;
+- the offline copy keeps every season's light photo and AI labels, and the label images stay lossless at the map's shape (the spot question reads exact colours);
 - the bundled Leaflet is byte-identical to the published 1.9.4 build, the app loads no script from a CDN, every file the offline copy lists exists, and every local link exists.
 
-[`tests/core.test.js`](tests/core.test.js) (Node's built-in test runner) checks the map's own logic in [`docs/app/core.js`](docs/app/core.js): distances, sorting, zone and village totals, keeping pins and labels apart, the shareable address (seasons, compare sides, marsh outline), the marsh status, the year a patch is drawn as built, and the water-storage what-if in lakh and crore litres.
+[`tests/core.test.js`](tests/core.test.js) (Node's built-in test runner) checks the map's own logic in [`docs/app/core.js`](docs/app/core.js): distances, sorting, zone and village totals, keeping pins and labels apart, the shareable address (seasons, compare sides, marsh outline), the marsh status, the year a patch is drawn as built, the water-storage what-if in lakh and crore litres, and the spot question: which pixel of a label image is under a point, which label a colour is, what the rule makes of a spot's seasons, and whether a point lies in a patch.
 
 ## Quality checks
 
@@ -192,6 +212,7 @@ Lighthouse 12.8, 27 Oct 2026:
 On the live mobile run the first satellite image took 8.3 s to appear: the two full images (about 680 KB) downloaded alongside the street-map tiles. Since then the map shows light 600 px copies first (about 200 KB for both years), swaps in the full images when they arrive, and loads the street map only after the satellite images. The live mobile score has not been measured again since that change.
 
 - **axe-core 4.10:** no violations in light or dark mode at phone width, with every panel, a popup, the AI labels and the intro open; checked again on 27 Oct after the year-by-year upgrade, with a popup, the marsh outline and the year player open, in light and dark.
+- **27 Oct, after the spot question, patch watching and the self-playing tour:** axe-core 4.10 found no violations on the live map (tour step 3 with a spot popup, a patch being watched, a spot popup, the intro) or on the project page, in light and dark, at desktop and phone width.
 - Lighthouse was not re-run after the year-by-year upgrade.
 - **The one best-practice note left:** OpenStreetMap's base tiles are 256 px and look soft on high-density phone screens. Sharper tiles would mean four times as many requests to OSM's volunteer-run servers, so we left them.
 
@@ -203,6 +224,8 @@ earthengine/     the same rule as a Code Editor script
 outputs/         stats.json, top_spots.csv, topten_check.md, close-ups
 docs/            the GitHub Pages site
   index.html       project page
+  FINAL_ROUND_PLAN.md  the 24-hour plan for the final
+  img/timelapse/   patch #1 in every dry season (patch_timelapse.py)
   app/             live map: index.html, app.js (page), core.js (logic), app.css
     sw.js          offline copy; manifest.webmanifest and icons/ for installing
     data/          exported images, patches.geojson, close-ups
@@ -253,7 +276,8 @@ Dynamic World accuracy figures: Brown, C.F. et al. (2022), *Dynamic World, near 
 - [x] Round 2 live map: compare, AI labels, 36 patches, top-10 close-ups, guided tour, shareable views, tests (`docs/app/`)
 - [x] Round 2 upgrade: close-ups, zone or village names and AI confidence for all 36; sort, area chart, near me; offline and installable; CI
 - [x] Year by year: every dry season 2018–2026, the year each patch was built over, the protected marsh and its 1 km zone, the 2021 floods, Landsat's water history, open CSV
-- [ ] Final round (24 h): new-change alerts (first inside the 1 km zone), citizen photo check, complaint PDF in Tamil and English, Sentinel-1 radar
+- [x] Ask the AI about any spot, watch any patch season by season, a tour that plays itself, every season offline, extension points for the final
+- [ ] Final round (24 h, [plan](docs/FINAL_ROUND_PLAN.md)): new-change alerts (first inside the 1 km zone), citizen photo check, complaint PDF in Tamil and English, Sentinel-1 radar
 
 Named after the *neerkatti*, Tamil Nadu's traditional lake-keepers. Team Sternritters, DEXATHON 2026, Sathyabama Institute of Science and Technology, Chennai.
 

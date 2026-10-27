@@ -615,6 +615,7 @@
   }
   function showSeason(y) {
     state.year = y;
+    emit('season', y);
     if (state.mode !== 'single') { state.mode = 'single'; check('mode', 'single'); }
     applyLayers();
     writeHash();
@@ -746,6 +747,15 @@
     if (p.landsat_water_ever >= 0.1) rows.push(['sat', 'Landsat saw open water on <b>' + pct(p.landsat_water_ever) + '</b> of it, 1984–2021']);
     return '<ul class="ctx">' + rows.map(function (r) { return '<li class="' + r[0] + '">' + r[1] + '</li>'; }).join('') + '</ul>';
   }
+  // Buttons added by extensions (window.NEERKATTI_API.addPatchAction), under the AI confidence
+  var patchActions = [];
+  function actionsHtml(p) {
+    var list = patchActions.filter(function (a) { return !a.when || a.when(p); });
+    if (!list.length) return '';
+    return '<div class="pop-acts">' + list.map(function (a) {
+      return '<button type="button" class="btn ghost pop-act" data-action="' + esc(a.id) + '" data-rank="' + p.rank + '">' + esc(a.label) + '</button>';
+    }).join('') + '</div>';
+  }
   function popupHtml(p) {
     return '<div class="pop">' +
       '<div class="pop-title">#' + p.rank + ' · ' + placeOf(p) + '</div>' +
@@ -756,6 +766,7 @@
       timelineHtml(p) +
       contextHtml(p) +
       confHtml(p) +
+      actionsHtml(p) +
       '<div class="pop-foot"><span class="pill check">Possible change, needs a ground check</span>' +
       '<a href="' + gmaps(p) + '" target="_blank" rel="noopener">Google Maps (satellite) →</a></div>' +
       '</div>';
@@ -931,6 +942,7 @@
   function select(rank, opts) {
     var hit = byRank[rank];
     if (!hit) return;
+    emit('select', hit.feature.properties);
     opts = opts || {};
     map.closePopup();
     if (selected) unmark(selected);   // a selection made without a popup has no popupclose to clear it
@@ -1009,6 +1021,12 @@
     if (e.popup !== popup || popupWired) return;
     popupWired = true;
     popup.getElement().addEventListener('click', function (ev) {
+      var act = ev.target.closest('.pop-act');
+      if (act) {
+        var a = patchActions.filter(function (x) { return x.id === act.dataset.action; })[0];
+        if (a) a.run(byRank[act.dataset.rank].feature.properties, api);
+        return;
+      }
       var btn = ev.target.closest('.tl-play');
       if (!btn) return;
       // the popup is redrawn next, which would leave the map unable to tell this click came from inside it
@@ -1517,6 +1535,36 @@
   $('intro-close').addEventListener('click', closeIntro);
   $('intro-tour').addEventListener('click', function () { startTour(true); });
   $('open-intro').addEventListener('click', function () { endTour(); openIntro(); });
+
+  // ---- extension points for the final round ------------------------------------------
+  // The 24-hour features (alerts, citizen photo check, complaint PDF, radar) are to be built
+  // as separate files that load after this one and use only this API, so four people can
+  // work at once without editing this file. docs/FINAL_ROUND_PLAN.md has the plan and the
+  // data formats. Nothing in the Round 2 map uses it yet.
+  var listeners = { select: [], season: [] };
+  function emit(name, value) {
+    ((listeners && listeners[name]) || []).forEach(function (fn) { try { fn(value); } catch (e) { if (window.console) console.error(e); } });
+  }
+  var api = {
+    version: 1,
+    map: map,                     // the Leaflet map, for new layers
+    data: D,                      // {meta, patches}, as in data/neerkatti_data.js
+    core: core,                   // the plain helpers in core.js
+    seasons: SPOT_KEYS.slice(),   // '2018' … '2026', 'monsoon'
+    pick: function (rank) { mapApi.pick(rank); },
+    showSeason: function (y) { mapApi.showYear(String(y)); },
+    askSpot: function (lat, lon) { askSpot([lat, lon]); },
+    readSpot: function (lat, lon) { return readSpot(L.latLng(lat, lon)); },
+    say: say,
+    // {id, label, run(patch, api), when(patch) optional}: a button in every patch's card
+    addPatchAction: function (action) {
+      patchActions = patchActions.filter(function (a) { return a.id !== action.id; }).concat([action]);
+      if (selected && map.hasLayer(popup)) popup.setContent(popupHtml(selected.feature.properties));
+    },
+    // 'select' (a patch's properties) or 'season' ('2018' …)
+    on: function (name, fn) { if (listeners[name]) listeners[name].push(fn); }
+  };
+  window.NEERKATTI_API = api;
 
   // ---- start ----------------------------------------------------------------
   map.on('resize', function () {

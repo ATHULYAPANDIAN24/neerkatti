@@ -450,3 +450,7 @@ code{font:13px/1.4 Consolas,"Cascadia Mono",monospace;background:var(--tint);pad
 .sp-open .btn{padding:6px 12px;font-size:13px}
 .sp-coach{margin:0 0 8px}
 .sp-coach .sp-cell i{max-width:22px}
+
+/* buttons that final-round extensions add to a patch's card (window.NEERKATTI_API) */
+.pop-acts{display:flex;flex-wrap:wrap;gap:6px;margin:6px 0 2px}
+.pop-acts .btn{padding:6px 12px;font-size:13px}
