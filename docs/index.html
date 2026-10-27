@@ -6,8 +6,11 @@
 <title>NEERKATTI · Chennai's AI water-keeper</title>
 <meta name="description" content="Satellite change detection for the Pallikaranai wetlands, Chennai: 28.1 hectares of 2018 water and marsh are flagged as built over. DEXATHON 2026, Team Sternritters.">
 <meta property="og:title" content="NEERKATTI · Chennai's AI water-keeper">
-<meta property="og:description" content="28.1 hectares of Pallikaranai's 2018 water and marsh are flagged as built over. Drag the slider to see 2018 vs 2026.">
+<meta property="og:description" content="28.1 hectares of Pallikaranai's 2018 water and marsh are flagged as built over, two-thirds of it since 2023. Watch a marsh disappear, season by season.">
 <meta property="og:image" content="https://athulyapandian24.github.io/neerkatti/img/og.jpg">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="NEERKATTI: patch 1 in Perungudi in 2018, 2022 and 2026, marsh turning into buildings, with the headline numbers">
 <meta property="og:url" content="https://athulyapandian24.github.io/neerkatti/">
 <meta property="og:type" content="website">
 <meta name="twitter:card" content="summary_large_image">
@@ -33,7 +36,7 @@ a{color:inherit}
 .wrap{max-width:1120px;margin:0 auto;padding:0 20px}
 header.top{background:var(--navy);color:#fff}
 header.top .wrap{display:flex;gap:12px;align-items:center;justify-content:space-between;min-height:56px;font-size:14px}
-.brand{font-weight:800;letter-spacing:.08em}
+.brand{font-weight:800;letter-spacing:.08em;font-size:19px}
 .brand span{color:var(--orange)}
 .top nav a{color:#C9D3E6;text-decoration:none;margin-left:18px;font-weight:500}
 .top nav a:hover{color:#fff}
@@ -101,7 +104,7 @@ tr:last-child td{border-bottom:0}
 .step p{margin:0 0 14px;color:var(--muted);font-size:14px}
 .st{display:inline-block;margin-top:auto;font-size:11px;font-weight:800;letter-spacing:.1em;padding:3px 9px;border-radius:999px}
 .st.now{background:#E3F4EA;color:#17733D}
-.st.final{background:#FDEBDD;color:#B4561A}
+.st.final{background:#FDEBDD;color:#9A3F0C}
 @media (prefers-color-scheme:dark){.st.now{background:#163A27;color:#7FD6A2}.st.final{background:#3E2615;color:#F6B285}}
 .fix{display:grid;grid-template-columns:1fr 1fr 1.1fr;gap:20px;align-items:start}
 .fix figure{margin:0;background:var(--card);border-radius:18px;padding:10px;box-shadow:var(--shadow)}
@@ -113,9 +116,45 @@ tr:last-child td{border-bottom:0}
 footer{margin-top:64px;background:var(--navy);color:#C9D3E6;padding:34px 0;font-size:14px}
 footer a{color:#fff}
 footer .cols{display:grid;grid-template-columns:1.2fr 1fr;gap:28px}
-footer h4{color:#fff;margin:0 0 8px;font-size:15px}
+footer h2{color:#fff;margin:0 0 8px;font-size:15px;letter-spacing:0;line-height:1.4}
 footer p{margin:0 0 6px}
+.flip{display:grid;grid-template-columns:minmax(0,480px) minmax(0,1fr);gap:32px;align-items:center}
+.flip-fig{margin:0;background:var(--card);border-radius:20px;padding:12px;box-shadow:var(--shadow)}
+.flip-frame{position:relative;border-radius:14px;overflow:hidden;background:#2a3242;aspect-ratio:1}
+.flip-frame img{display:block;width:100%;height:100%;object-fit:cover}
+.flip-frame .tag{left:12px;background:var(--navy)}
+.flip-frame .tag.late{background:#C2410C}
+.flip-ctl{display:flex;align-items:center;gap:12px;padding:12px 4px 2px}
+.flip-play{flex-shrink:0;width:40px;height:40px;border-radius:50%;border:0;background:var(--orange);color:#1B2333;display:grid;place-items:center;cursor:pointer}
+.flip-play svg{width:18px;height:18px;fill:currentColor}
+.flip-play .i-pause,.flip-play.on .i-play{display:none}
+.flip-play.on .i-pause{display:inline}
+.flip-ctl input{flex:1;min-width:0;accent-color:var(--accent)}
+.flip-cap{font-size:14px;color:var(--muted);padding:6px 4px 2px;min-height:3em}
+.flip-cap b{color:var(--ink)}
+.facts{list-style:none;margin:0 0 20px;padding:0;display:grid;gap:10px}
+.facts li{background:var(--card);border-radius:14px;padding:12px 16px;box-shadow:var(--shadow);font-size:15px}
+.facts b{color:var(--accent)}
+.path{counter-reset:p;list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(5,1fr);gap:12px}
+.path li{background:var(--card);border-radius:16px;padding:16px;box-shadow:var(--shadow);display:flex;flex-direction:column;gap:6px}
+.path li::before{counter-increment:p;content:counter(p);display:grid;place-items:center;width:30px;height:30px;border-radius:50%;background:var(--orange);color:#1B2333;font-weight:800}
+.path h3{margin:4px 0 0;font-size:16px}
+.path p{margin:0;font-size:14px;color:var(--muted)}
+.path a{margin-top:auto;font-weight:700;color:var(--accent);text-decoration:none;font-size:14px}
+.path a:hover{text-decoration:underline}
+.biz{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
+.biz div{background:var(--card);border-radius:18px;padding:18px;box-shadow:var(--shadow)}
+.biz h3{margin:0 0 6px;font-size:17px}
+.biz p{margin:0;color:var(--muted);font-size:15px}
+.roll{list-style:none;margin:18px 0 0;padding:0;display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
+.roll li{border-top:4px solid var(--line);padding:10px 2px 0;font-size:14px;color:var(--muted)}
+.roll li.on{border-color:var(--orange)}
+.roll b{display:block;color:var(--ink);font-size:15px}
 @media (max-width:900px){
+  .flip{grid-template-columns:1fr}
+  .path{grid-template-columns:1fr 1fr}
+  .biz{grid-template-columns:1fr}
+  .roll{grid-template-columns:1fr 1fr}
   .hero{background:var(--navy);padding-bottom:28px}
   .hero-grid{grid-template-columns:1fr}
   .sites{grid-template-columns:1fr}
@@ -126,6 +165,7 @@ footer p{margin:0 0 6px}
   .top nav{display:none}
 }
 @media (max-width:520px){
+  .path{grid-template-columns:1fr}
   .wrap{padding:0 16px}
   .steps{grid-template-columns:1fr}
   .fix{grid-template-columns:1fr}
@@ -138,12 +178,12 @@ footer p{margin:0 0 6px}
   <div class="wrap">
     <div class="brand">NEER<span>KATTI</span></div>
     <nav aria-label="Sections">
-      <a href="app/">Live map</a><a href="#map">2018 vs 2026</a><a href="#sites">Sites</a><a href="#how">How it works</a><a href="https://github.com/ATHULYAPANDIAN24/neerkatti">GitHub</a>
+      <a href="app/">Live map</a><a href="#timelapse">Year by year</a><a href="#try">Try it</a><a href="#sites">Sites</a><a href="#how">How it works</a><a href="https://github.com/ATHULYAPANDIAN24/neerkatti">GitHub</a>
     </nav>
   </div>
 </header>
 
-<div class="hero">
+<section class="hero" aria-label="Introduction">
   <div class="wrap hero-grid">
     <div>
       <span class="kicker">DEXATHON 2026 · Team Sternritters · Sustainability</span>
@@ -152,7 +192,7 @@ footer p{margin:0 0 6px}
       <p class="lead">We followed the Pallikaranai watershed through every dry season from 2018 to 2026 in satellite images. An AI model labels every 10&nbsp;m square of land, and our rule flags water and marsh that turned into buildings. <b>28.1&nbsp;hectares are flagged as built over, two-thirds of it since 2023,</b> and most of it lies in or near the protected marsh.</p>
       <div class="btns">
         <a class="btn primary" href="app/">Open the live map</a>
-        <a class="btn ghost" href="#map">See 2018 vs 2026</a>
+        <a class="btn ghost" href="app/?tour=1">Watch the 1-minute tour</a>
         <a class="btn ghost" href="https://github.com/ATHULYAPANDIAN24/neerkatti">Code on GitHub</a>
       </div>
       <div class="stats">
@@ -186,9 +226,51 @@ footer p{margin:0 0 6px}
       <div class="hint">Drag across the image. Sentinel-2, Feb–May median of each year, 80.17–80.26°E, 12.86–12.99°N.</div>
     </div>
   </div>
-</div>
+</section>
 
 <main class="wrap">
+  <section id="timelapse">
+    <div class="label">Year by year</div>
+    <h2>Watch a marsh disappear</h2>
+    <p class="intro">Patch #1 in Perungudi, every dry season from 2018 to 2026: the same Sentinel-2 view of the clear Feb–May images each year, with the flagged patch outlined in red. The caption says what the AI labelled inside the outline that season.</p>
+    <div class="flip">
+      <figure class="flip-fig" data-flip data-years="[2018,2019,2020,2021,2022,2023,2024,2025,2026]" data-built="[0,0,0,0,0,0.35,0.66,1.0,1.0]" data-wet="[1,1,1,0.99,0.93,0.58,0.07,0,0.0]">
+        <div class="flip-frame">
+          <img src="img/timelapse/p01_2026.jpg" alt="Patch 1, Perungudi, Feb–May 2026: Sentinel-2 view with the flagged patch outlined in red" width="640" height="640" loading="lazy">
+          <span class="tag l late">2026</span>
+        </div>
+        <div class="flip-ctl">
+          <button type="button" class="flip-play" aria-label="Play 2018 to 2026"><svg viewBox="0 0 24 24" aria-hidden="true"><path class="i-play" d="M8 5v14l11-7z"/><path class="i-pause" d="M7 5h4v14H7zM13 5h4v14h-4z"/></svg></button>
+          <input type="range" min="0" max="8" step="1" value="8" aria-label="Dry season">
+        </div>
+        <figcaption class="flip-cap"><b>2026:</b> the AI labels 100% of the patch buildings, 0% water or marsh.</figcaption>
+      </figure>
+      <div>
+        <ul class="facts">
+          <li><b>10.92 ha</b>, the biggest flagged patch: about 27 acres.</li>
+          <li><b>Marsh until 2022</b>, cleared in 2023, buildings on 100% of it by 2025. Built over since 2024 by our cautious rule.</li>
+          <li><b>Inside the protected marsh outline</b> (OpenStreetMap), and 93% water or marsh on 26 Dec 2021, after the floods.</li>
+          <li>Checked by eye: marsh cleared and built up. Still a <b>possible change that needs a ground check</b>.</li>
+        </ul>
+        <p class="btns"><a class="btn primary" href="app/#patch-1">Open patch #1 on the live map</a></p>
+        <p class="hint">On the map, every patch's card has <b>Watch it 2018–2026</b>, and you can tap any spot to see what the AI saw there each season.</p>
+      </div>
+    </div>
+  </section>
+
+  <section id="try">
+    <div class="label">For judges</div>
+    <h2>Try it in 60 seconds</h2>
+    <p class="intro">Five things to try on the live map. It runs in any browser, on a phone too, and keeps working offline once opened.</p>
+    <ol class="path">
+      <li><h3>Watch the tour</h3><p>Six steps that play by themselves: compare, year by year, the AI's labels, the biggest patch, the protected marsh, the 2021 floods.</p><a href="app/?tour=1">Start the tour →</a></li>
+      <li><h3>Watch a patch</h3><p>Open patch #1 and press <b>Watch it 2018–2026</b>: the map zooms in and plays its seasons.</p><a href="app/#patch-1">Open patch #1 →</a></li>
+      <li><h3>Ask the AI</h3><p>Tap any spot on the map, flagged or not, to see the label the AI gave it every season and what our rule makes of it.</p><a href="app/?intro=0#layer=labels">Show the AI labels →</a></li>
+      <li><h3>Check the marsh</h3><p>Turn on the protected marsh: 28 of 36 patches lie in it or within 1&nbsp;km.</p><a href="app/?intro=0#marsh=1">Show the marsh →</a></li>
+      <li><h3>Take the data</h3><p>All 36 patches with every season's shares, AI confidence and marsh distance, as a spreadsheet.</p><a href="app/data/patches.csv" download="neerkatti_patches.csv">Download the CSV →</a></li>
+    </ol>
+  </section>
+
   <section id="sites">
     <div class="label">Checked by eye</div>
     <h2>Where the marsh became buildings</h2>
@@ -256,6 +338,24 @@ footer p{margin:0 0 6px}
     </div>
   </section>
 
+  <section id="use">
+    <div class="label">Feasibility</div>
+    <h2>Who it is for, and how it pays</h2>
+    <p class="intro">Residents' welfare associations, NGOs, the Greater Chennai Corporation and the State Wetlands Authority. Free for citizens; paid for by the agencies and companies that need the same watch done for them.</p>
+    <div class="biz">
+      <div><h3>Free for citizens</h3><p>The map, the open data and, from the final round, alerts, photo checks and complaint letters.</p></div>
+      <div><h3>Paid dashboard</h3><p>For agencies, NGOs and insurers who want their own areas watched, with alerts routed to their teams.</p></div>
+      <div><h3>CSR</h3><p>IT companies on the OMR corridor adopt a nearby lake and fund its watch.</p></div>
+    </div>
+    <ol class="roll">
+      <li class="on"><b>1 · Now: ₹0</b>Free Sentinel-2 images and Dynamic World, Earth Engine (non-commercial), GitHub Pages.</li>
+      <li><b>2 · Final round, 4–5 Nov</b>Alerts, citizen photo check and complaint PDF, on free tiers.</li>
+      <li><b>3 · Chennai pilot</b>Cloud hosting, SMS or WhatsApp alerts, field checks with RWAs and NGOs.</li>
+      <li><b>4 · Tamil Nadu</b>1,06,957 water bodies: an Earth Engine commercial licence or self-hosting; Sentinel data stays free.</li>
+    </ol>
+    <p class="hint">We would measure hectares caught early, complaints filed, and days from the first change to an alert. The 24-hour build plan is on <a class="maplink" href="https://github.com/ATHULYAPANDIAN24/neerkatti/blob/main/docs/FINAL_ROUND_PLAN.md">GitHub</a>.</p>
+  </section>
+
   <section id="how">
     <div class="label">Method</div>
     <h2>How it works</h2>
@@ -264,7 +364,7 @@ footer p{margin:0 0 6px}
       <div class="step"><h3>Sentinel-2 satellite</h3><p>Free images of every lake, every 5 days.</p><span class="st now">WORKING NOW</span></div>
       <div class="step"><h3>Dynamic World AI</h3><p>A deep-learning model labels each 10&nbsp;m square: water, marsh, built, soil.</p><span class="st now">WORKING NOW</span></div>
       <div class="step"><h3>Change rule v1</h3><p>2018 water/marsh that is built in 2025 <i>and</i> 2026. Lake edges ignored.</p><span class="st now">WORKING NOW</span></div>
-      <div class="step"><h3>Live map + open data</h3><p>Every dry season 2018–2026 on a <a href="app/">public web map</a>: play it year by year or compare any two. All 36 patches with a close-up, the year each was built over, the protected marsh, the 2021 floods and an AI confidence level, in a CSV and GeoJSON anyone can reuse.</p><span class="st now">WORKING NOW</span></div>
+      <div class="step"><h3>Live map + open data</h3><p>Every dry season 2018–2026 on a <a href="app/">public web map</a>: play it year by year, compare any two, watch any patch up close, or tap any spot to see what the AI saw there. All 36 patches with a close-up, the year each was built over, the protected marsh, the 2021 floods and an AI confidence level, in a CSV and GeoJSON anyone can reuse.</p><span class="st now">WORKING NOW</span></div>
       <div class="step next"><h3>Alert + citizen photo</h3><p>Alerts for new changes, with radar that sees through monsoon clouds. A vision model tags the citizen's photo: dumping, construction, sewage or no change.</p><span class="st final">FINAL ROUND</span></div>
       <div class="step next"><h3>Complaint PDF</h3><p>Drafted in Tamil and English, with dated before/after proof.</p><span class="st final">FINAL ROUND</span></div>
     </div>
@@ -288,13 +388,13 @@ footer p{margin:0 0 6px}
 <footer>
   <div class="wrap cols">
     <div>
-      <h4>NEERKATTI · Team Sternritters</h4>
+      <h2>NEERKATTI · Team Sternritters</h2>
       <p>Built for DEXATHON 2026, Sathyabama Institute of Science and Technology, Chennai.</p>
       <p>Named after the <i>neerkatti</i>, Tamil Nadu's traditional lake-keepers.</p>
       <p><a href="https://github.com/ATHULYAPANDIAN24/neerkatti">github.com/ATHULYAPANDIAN24/neerkatti</a> · code under the MIT licence</p>
     </div>
     <div>
-      <h4>Data</h4>
+      <h2>Data</h2>
       <p>Contains modified Copernicus Sentinel data (2018–2026).</p>
       <p>Dynamic World V1, Google &amp; World Resources Institute (CC BY 4.0).</p>
       <p>Processed with Google Earth Engine (non-commercial). Place names: © OpenStreetMap contributors.</p>
@@ -330,6 +430,54 @@ document.querySelectorAll('[data-compare]').forEach(function (box) {
     if (e.key === 'Home') { set(0); e.preventDefault(); }
     if (e.key === 'End') { set(100); e.preventDefault(); }
   });
+});
+// Year by year: patch #1's seasons in turn. Plays once it scrolls into view, unless the
+// reader prefers less motion; the button and the slider work at any time.
+document.querySelectorAll('[data-flip]').forEach(function (fig) {
+  var years = JSON.parse(fig.dataset.years), built = JSON.parse(fig.dataset.built), wet = JSON.parse(fig.dataset.wet);
+  var img = fig.querySelector('img'), tag = fig.querySelector('.tag'), cap = fig.querySelector('.flip-cap');
+  var btn = fig.querySelector('.flip-play'), range = fig.querySelector('input');
+  var at = years.length - 1, timer = null, loaded = false;
+  function pct(x) { return Math.round(x * 100) + '%'; }
+  function show(i) {
+    at = i;
+    var y = years[i];
+    img.src = 'img/timelapse/p01_' + y + '.jpg';
+    img.alt = 'Patch 1, Perungudi, Feb–May ' + y + ': Sentinel-2 view with the flagged patch outlined in red';
+    tag.textContent = y;
+    tag.classList.toggle('late', built[i] >= 0.5);
+    range.value = i;
+    range.setAttribute('aria-valuetext', String(y));
+    cap.innerHTML = '<b>' + y + ':</b> the AI labels ' + pct(built[i]) + ' of the patch buildings, ' + pct(wet[i]) + ' water or marsh.';
+  }
+  function preload() {
+    if (loaded) return;
+    loaded = true;
+    years.forEach(function (y) { new Image().src = 'img/timelapse/p01_' + y + '.jpg'; });
+  }
+  function stop() { clearTimeout(timer); timer = null; btn.classList.remove('on'); btn.setAttribute('aria-label', 'Play 2018 to 2026'); }
+  function play() {
+    preload();
+    btn.classList.add('on');
+    btn.setAttribute('aria-label', 'Pause');
+    if (at === years.length - 1) show(0);
+    (function step() {
+      timer = setTimeout(function () {
+        if (at === years.length - 1) { show(0); step(); return; }
+        show(at + 1);
+        step();
+      }, at === years.length - 1 ? 2200 : 900);
+    })();
+  }
+  btn.addEventListener('click', function () { if (timer) stop(); else play(); });
+  range.addEventListener('input', function () { stop(); preload(); show(+range.value); });
+  var calm = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  if (!calm && 'IntersectionObserver' in window) {
+    var seen = new IntersectionObserver(function (entries) {
+      if (entries[0].isIntersecting) { seen.disconnect(); play(); }
+    }, { threshold: 0.5 });
+    seen.observe(fig);
+  }
 });
 var toggle = document.querySelector('[data-toggle]');
 var loss = document.querySelector('[data-loss]');

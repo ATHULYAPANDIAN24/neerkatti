@@ -268,6 +268,23 @@ class Pages(unittest.TestCase):
             self.assertAlmostEqual(float(area), p["area_ha"], places=2)
             self.assertEqual(re.sub(r" \([A-C]\)$", "", place), p["place"])
 
+    def test_project_page_timelapse_matches_the_data(self):
+        # "Watch a marsh disappear": patch #1's seasons (analysis/patch_timelapse.py)
+        p1 = self.patches["features"][0]["properties"]
+        page = re.sub(r" ([,.:;])", r"\1", self.page)   # "<b>10.92 ha</b>," reads "10.92 ha,"
+        fig = re.search(r'data-flip data-years="([^"]+)" data-built="([^"]+)" data-wet="([^"]+)"', self.page_html)
+        self.assertEqual(json.loads(fig.group(1)), self.meta["timeline_years"])
+        self.assertEqual(json.loads(fig.group(2)), p1["built_by_year"])
+        self.assertEqual(json.loads(fig.group(3)), p1["wet_by_year"])
+        for y in self.meta["timeline_years"]:
+            self.assertTrue((ROOT / "docs" / "img" / "timelapse" / f"p01_{y}.jpg").is_file(), y)
+        self.assertIn(f"{p1['area_ha']:.2f} ha, the biggest flagged patch: about {round(p1['area_ha'] * 2.471)} acres", page)
+        self.assertIn(f"Built over since {p1['built_since']} by our cautious rule", page)
+        self.assertEqual(p1["marsh_share"], 1)
+        self.assertIn("Inside the protected marsh outline", page)
+        self.assertIn(f"{round(p1['wet_monsoon'] * 100)}% water or marsh on 26 Dec 2021", page)
+        self.assertIn(f"Checked by eye: {p1['finding'].lower()}", page)
+
     def test_readme_numbers(self):
         for s in (f"{self.meta['lost_ha']} ha", f"{self.meta['patch_count']} patches", f"≈{self.acres} acres", "9 of the top 10"):
             self.assertIn(s, self.readme)

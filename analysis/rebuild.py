@@ -22,6 +22,7 @@ STEPS = [
     ("WebP map images at the map's shape (no Earth Engine)", [PY, "analysis/web_images.py"]),
     ("the patches as a spreadsheet (no Earth Engine)", [PY, "analysis/open_data.py"]),
     ("project page images", [PY, "analysis/demo_assets.py"]),
+    ("patch #1 every season, link previews", [PY, "analysis/patch_timelapse.py"]),
     ("consistency tests (Python)", [PY, "-m", "unittest", "discover", "-s", "tests"]),
     ("map logic tests (Node)", ["node", "--test", *sorted(str(p.relative_to(ROOT)) for p in (ROOT / "tests").glob("*.test.js"))]),
 ]
