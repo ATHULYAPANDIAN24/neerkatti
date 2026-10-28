@@ -416,6 +416,13 @@ class StaticSite(unittest.TestCase):
             for url in re.findall(r"https?://[^\"'\s)<>]+", read(rel)):
                 self.assertNotRegex(url, r"/\d{4}/\w{3}/\d{1,2}/?$", f"{rel}: {url}")
 
+    def test_readme_local_links_exist(self):
+        readme = read("README.md")
+        refs = re.findall(r"\]\(([^)#\s]+)(?:#[^)]*)?\)", readme) + re.findall(r'<img src="([^"]+)"', readme)
+        for ref in refs:
+            if not re.match(r"https?:", ref):
+                self.assertTrue((ROOT / ref).exists(), f"README.md links to missing {ref}")
+
     def test_model_card_links_exist(self):
         card = ROOT / "docs" / "MODEL_CARD.md"
         for ref in re.findall(r"\]\(([^)#]+)(?:#[^)]*)?\)", card.read_text(encoding="utf-8")):

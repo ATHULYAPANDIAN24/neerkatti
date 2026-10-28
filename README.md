@@ -37,6 +37,13 @@ DEXATHON 2026 · Sustainability Development track · Software · Team Sternritte
 
 It runs in any browser, on a phone too, and keeps working offline once opened.
 
+<p>
+  <img src="docs/img/readme/watch_patch_phone.jpg" width="300" alt="The live map on a phone: patch 1 in Perungudi being watched season by season; its card shows 2021, still 99% water or marsh, and buildings from 2024">
+  <img src="docs/img/readme/spot_question_phone.jpg" width="300" alt="The live map on a phone with the AI labels: a spot inside patch 1 was water every dry season to 2023, crops in 2024 and buildings in 2025 and 2026; the card says it is part of flagged patch 1">
+</p>
+
+*On a phone: watching patch #1 season by season (left), and asking the AI about a spot inside it (right).*
+
 ## Results
 
 | What | Value | Where it comes from |
@@ -65,7 +72,7 @@ The top-10 check is a visual check of 2018 | 2026 Sentinel-2 close-ups and curre
 | Charts: hectares built over per season, flagged hectares by zone or village and by distance from the marsh; a what-if for the water the lost marsh could hold | |
 | A list you can sort by size, newest, confidence or area; "near me" (the location stays on the device); a 6-step guided tour that plays itself; shareable links such as `#patch-4&year=2021&layer=labels&marsh=1` | |
 | Works offline once opened, every season included, and installs on a phone's home screen | |
-| Open CSV and GeoJSON; 40 consistency tests and 18 map-logic tests, run by GitHub Actions on every push | |
+| Open CSV and GeoJSON; 41 consistency tests and 18 map-logic tests, run by GitHub Actions on every push | |
 | Extension points for the final: `window.NEERKATTI_API` lets each final-round feature live in its own file | |
 
 The DEXATHON rules say major features are built during the 24-hour final, so the right-hand column is a plan, not code. The hour-by-hour plan for four people, with risks, fallbacks and the data formats, is in [`docs/FINAL_ROUND_PLAN.md`](docs/FINAL_ROUND_PLAN.md).
