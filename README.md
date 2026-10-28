@@ -202,21 +202,18 @@ Then open <http://localhost:8765/app/>. Opening `docs/app/index.html` straight f
 
 ## Quality checks
 
-Lighthouse 12.8, 27 Oct 2026:
+[PageSpeed Insights](https://pagespeed.web.dev/analysis/https-athulyapandian24-github-io-neerkatti-app/sl03a9co6u?form_factor=mobile) (Lighthouse 13.5.0) on the live map, 28 Oct 2026, 13:27 IST:
 
-| Where | Performance | Accessibility | Best practices | SEO |
+| Live map | Performance | Accessibility | Best practices | SEO |
 |---|---|---|---|---|
-| Live site, desktop | 97 | 100 | 100 | 100 |
-| Live site, mobile (simulated slow 4G) | 74 | 100 | 96 | 100 |
-| Local copy, desktop | 96 | 100 | 100 | 100 |
-| Local copy, mobile (simulated slow 4G) | 86 | 100 | 96 | 100 |
+| Phone (emulated Moto G Power, slow 4G) | 93 | 100 | 96 | 100 |
+| Desktop | 98 | 100 | 100 | 100 |
 
-On the live mobile run the first satellite image took 8.3 s to appear: the two full images (about 680 KB) downloaded alongside the street-map tiles. Since then the map shows light 600 px copies first (about 200 KB for both years), swaps in the full images when they arrive, and loads the street map only after the satellite images. The live mobile score has not been measured again since that change.
+The offline copy of every season is saved after the page has loaded, so it is not part of the page weight PageSpeed measures.
 
-- **axe-core 4.10:** no violations in light or dark mode at phone width, with every panel, a popup, the AI labels and the intro open; checked again on 27 Oct after the year-by-year upgrade, with a popup, the marsh outline and the year player open, in light and dark.
-- **27 Oct, after the spot question, patch watching and the self-playing tour:** axe-core 4.10 found no violations on the live map (tour step 3 with a spot popup, a patch being watched, a spot popup, the intro) or on the project page, in light and dark, at desktop and phone width.
-- Lighthouse was not re-run after the year-by-year upgrade.
-- **The one best-practice note left:** OpenStreetMap's base tiles are 256 px and look soft on high-density phone screens. Sharper tiles would mean four times as many requests to OSM's volunteer-run servers, so we left them.
+- **axe-core 4.10:** no violations on the live map (the intro, a patch card, a spot popup, the tour, the AI labels with the marsh outline, the year player) or on the project page, in light and dark, at desktop and phone width; checked again on 28 Oct after that day's changes.
+- **Offline:** with the server stopped, the map reloads from the offline copy, plays every season's photo and AI labels, shows the 2021 flood image and still answers the spot question.
+- **The one best-practice note:** OpenStreetMap's base tiles are 256 px and look soft on high-density phone screens. Sharper tiles would mean four times as many requests to OSM's volunteer-run servers, so we left them.
 
 ## Repository layout
 
