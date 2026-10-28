@@ -1543,9 +1543,11 @@
   // (not with reduced motion), and a hint says to tap any spot until the first
   // spot question (remembered on this device).
   var hint = $('map-hint');
+  var looked = false;
   function hideHint() { if (hint) hint.hidden = true; }
   function firstLook() {
-    if (tourStep >= 0) return;
+    if (looked || tourStep >= 0) return;
+    looked = true;
     if (store('neerkatti-asked') !== 'yes') hint.hidden = false;
     if (calm.matches) return;
     container.classList.add('pulse');
@@ -1568,9 +1570,10 @@
   intro.addEventListener('click', function (e) {
     if (e.target !== intro) return;
     var r = intro.getBoundingClientRect();
-    if (e.clientX < r.left || e.clientX > r.right || e.clientY < r.top || e.clientY > r.bottom) closeIntro();
+    if (e.clientX < r.left || e.clientX > r.right || e.clientY < r.top || e.clientY > r.bottom) { closeIntro(); firstLook(); }
   });
-  $('intro-close').addEventListener('click', closeIntro);
+  // the first look also follows the dialog's close event (its × and Esc), which some browsers send a frame later
+  $('intro-close').addEventListener('click', function () { closeIntro(); firstLook(); });
   $('intro-tour').addEventListener('click', function () { startTour(true); });
   $('open-intro').addEventListener('click', function () { endTour(); openIntro(); });
 
