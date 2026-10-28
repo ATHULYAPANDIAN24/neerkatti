@@ -628,7 +628,8 @@
     if (state.mode !== 'single') showSeason(state.year);
     setPlaying(!playing);
   });
-  range.addEventListener('input', function () { endTour(); setPlaying(false); scrubbing = true; showSeason(range.value); });
+  // read the new season first: stopping the player redraws the bar, which puts the slider back on the old one
+  range.addEventListener('input', function () { var y = range.value; endTour(); setPlaying(false); scrubbing = true; showSeason(y); });
   range.addEventListener('change', function () { scrubbing = false; applyLayers(); });
 
   // ---- legend ---------------------------------------------------------------
