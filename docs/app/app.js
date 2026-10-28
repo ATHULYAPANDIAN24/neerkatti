@@ -682,9 +682,9 @@
   legend.setOpen(!narrow.matches);
 
   // ---- flagged patches ------------------------------------------------------
-  var STYLE = { color: '#ff1a1a', weight: 1.5, opacity: 1, fillColor: '#ff1a1a', fillOpacity: 0.35, dashArray: null };
+  var STYLE = { color: '#ff1a1a', weight: 1.5, opacity: 1, fillColor: '#ff1a1a', fillOpacity: 0.35, dashArray: null, className: 'nk-patch' };
   // year by year: a patch not yet built over in the season shown is only outlined
-  var LATER = { color: '#ff1a1a', weight: 1.5, opacity: 0.95, fillColor: '#ff1a1a', fillOpacity: 0, dashArray: '3 3' };
+  var LATER = { color: '#ff1a1a', weight: 1.5, opacity: 0.95, fillColor: '#ff1a1a', fillOpacity: 0, dashArray: '3 3', className: 'nk-patch' };
   var HOVER = { weight: 3, fillOpacity: 0.55 };
   var ON = { color: '#FFD400', weight: 3, fillColor: '#ff1a1a', fillOpacity: 0.5, dashArray: null };
   var byRank = {};
@@ -1147,7 +1147,8 @@
   function askSpot(latlng, inTour) {
     var at = L.latLng(latlng);
     if (!box.contains(at)) { say('Tap inside the satellite image: that is the study area'); return; }
-    if (!inTour) endTour();
+    if (!inTour) { endTour(); store('neerkatti-asked', 'yes'); }
+    hideHint();
     map.closePopup();
     var width = narrow.matches ? 260 : 290;
     spotPopup.options.maxWidth = spotPopup.options.minWidth = width;
@@ -1165,7 +1166,7 @@
   }
   // a tap that only closes a patch's popup does just that
   var patchPopupWasOpen = false;
-  map.on('preclick', function () { patchPopupWasOpen = map.hasLayer(popup); });
+  map.on('preclick', function () { patchPopupWasOpen = map.hasLayer(popup); hideHint(); });
   map.on('click', function (e) { if (!patchPopupWasOpen) askSpot(e.latlng); });
   var spotWired = false;
   map.on('popupopen', function (e) {
@@ -1499,6 +1500,7 @@
   }
   function startTour(withAuto) {
     closeIntro();
+    hideHint();
     showMap();
     setAuto(withAuto !== false);
     showStep(0);
@@ -1519,6 +1521,21 @@
   L.DomEvent.disableClickPropagation(coach);
   L.DomEvent.disableScrollPropagation(coach);
   $('start-tour').addEventListener('click', function () { startTour(true); });
+  $('bar-tour').addEventListener('click', function () { startTour(true); });
+
+  // ---- first look: what to tap ----------------------------------------------
+  // Once the map is in view, the flagged patches and their pins pulse a few times
+  // (not with reduced motion), and a hint says to tap any spot until the first
+  // spot question (remembered on this device).
+  var hint = $('map-hint');
+  function hideHint() { if (hint) hint.hidden = true; }
+  function firstLook() {
+    if (tourStep >= 0) return;
+    if (store('neerkatti-asked') !== 'yes') hint.hidden = false;
+    if (calm.matches) return;
+    container.classList.add('pulse');
+    setTimeout(function () { container.classList.remove('pulse'); }, 3500);
+  }
 
   // ---- intro: what this is, what works now, what comes in the final ---------
   var intro = $('intro');
@@ -1586,7 +1603,13 @@
   spreadPins();
   declutter();
   applyHash(true);
-  // first visit without a shared view: explain the map; ?tour=1 starts the tour, ?intro=0 skips both
+  // first visit without a shared view: explain the map; ?tour=1 starts the tour, ?intro=0 skips both.
+  // The first look follows once the map is in view (not under a shared patch's card).
+  var sharedPatch = core.readHash(location.hash).patch;
   if (params.get('tour') === '1') startTour(params.get('auto') !== '0');
-  else if (params.get('intro') !== '0' && !core.readHash(location.hash).patch && store('neerkatti-intro') !== 'seen') openIntro();
+  else if (params.get('intro') !== '0' && !sharedPatch && store('neerkatti-intro') !== 'seen') {
+    openIntro();
+    intro.addEventListener('close', function once() { intro.removeEventListener('close', once); firstLook(); });
+  }
+  else if (!sharedPatch) firstLook();
 })();

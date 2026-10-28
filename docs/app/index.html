@@ -36,6 +36,7 @@
     <a class="brand" href="../" aria-label="NEERKATTI project page">NEER<span>KATTI</span></a>
     <span class="bar-tag">AI water-keeper for Chennai's wetlands · Round 2 prototype</span>
     <nav aria-label="Links">
+      <button type="button" class="bar-btn tour" id="bar-tour"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5v14l11-7z"/></svg><span class="long">1-minute tour</span><span class="short">Tour</span></button>
       <button type="button" class="bar-btn" id="open-intro"><span class="long">How to read this map</span><span class="short">Help</span></button>
       <a href="../" class="hide-sm">Project page</a>
       <a href="https://github.com/ATHULYAPANDIAN24/neerkatti#readme">GitHub</a>
@@ -87,6 +88,7 @@
     </div>
     <div id="map" role="region" aria-label="Map of the Pallikaranai watershed, 2018 to 2026. Arrow keys move it; Enter shows what the AI saw at its centre."></div>
     <div class="map-note" id="map-note" role="status" aria-live="polite" hidden></div>
+    <div class="map-hint" id="map-hint" aria-hidden="true" hidden><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7" fill="none" stroke="currentColor" stroke-width="2"/><path d="m16 16 5 5" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg><span class="long">Tap any spot to see what the AI saw there, 2018–2026</span><span class="short">Tap any spot to ask the AI</span></div>
     <div class="coach" id="coach" hidden role="group" aria-labelledby="coach-title">
       <div class="coach-top"><span class="coach-step" id="coach-step">1 of 6</span><button type="button" class="coach-x" id="coach-x" aria-label="End the tour">×</button></div>
       <h2 id="coach-title" tabindex="-1"></h2>
