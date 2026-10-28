@@ -315,6 +315,16 @@ code{font:13px/1.4 Consolas,"Cascadia Mono",monospace;background:var(--tint);pad
 /* panel cards added for the year-by-year, marsh, flood and storage views */
 .chart-take{margin:8px 0 2px;font-size:13.5px;color:var(--muted)}
 .chart-take b{color:var(--ink)}
+/* who it is for and how it pays: the same plan as the project page's #use section */
+.biz-list{margin:0 0 10px;padding-left:18px;font-size:13.5px;line-height:1.45;color:var(--muted)}
+.biz-list li{margin-bottom:4px}
+.biz-list b{color:var(--ink)}
+.roll{list-style:none;counter-reset:roll;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px;margin:0 0 10px;padding:0}
+.roll li{counter-increment:roll;background:var(--tint);border-radius:10px;padding:7px 9px;font-size:12.5px;line-height:1.35;color:var(--muted)}
+.roll li b{display:block;color:var(--ink);font-size:13px;margin-bottom:1px}
+.roll li b::before{content:counter(roll) " · ";color:var(--accent)}
+.roll li.on{background:var(--now-bg)}
+.roll li.on b,.roll li.on b::before{color:var(--now-ink)}
 .card-btns{margin:4px 0 6px}
 .card-btns .btn{padding:7px 14px;font-size:13.5px}
 .cols-since{grid-template-columns:repeat(7,minmax(0,1fr));gap:4px}

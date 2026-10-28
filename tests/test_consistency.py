@@ -316,6 +316,16 @@ class Pages(unittest.TestCase):
                          '/blob/main/docs/MODEL_CARD.md"', 'href="data/patches.csv"'):
                 self.assertIn(href, row)
 
+    def test_who_it_is_for_matches_the_project_page(self):
+        # the map's feasibility card and the project page's #use section tell the same plan
+        app = re.search(r'<section class="chart-card biz-card".*?</section>', self.app_html, re.S).group(0)
+        page = re.search(r'<section id="use">.*?</section>', self.page_html, re.S).group(0)
+        for html in (app, page):
+            for s in ("Who it is for, and how it pays", "Free for citizens", "Paid dashboard", "agencies, NGOs and insurers",
+                      "CSR", "OMR corridor", "Now: ₹0", "Final round, 4–5 Nov", "Chennai pilot", "Tamil Nadu"):
+                self.assertIn(s, text_of(html))
+            self.assertIn("/blob/main/docs/FINAL_ROUND_PLAN.md", html)
+
     def test_final_round_features_are_labelled_as_plans(self):
         self.assertIn("Final round", self.app)
         self.assertIn("Planned, not built yet", self.app)
