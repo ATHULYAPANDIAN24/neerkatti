@@ -11,6 +11,8 @@ DEXATHON 2026 · Sustainability Development track · Software · Team Sternritte
 | **Live map (Round 2 prototype)** | <https://athulyapandian24.github.io/neerkatti/app/> |
 | **Project page** | <https://athulyapandian24.github.io/neerkatti/> |
 | **Open data** | [`patches.csv`](docs/app/data/patches.csv) (spreadsheet) and [`patches.geojson`](docs/app/data/patches.geojson) (outlines): every flagged patch with its zone or village, AI confidence, year built over, marsh distance and every season's shares |
+| **Model and data card** | [`docs/MODEL_CARD.md`](docs/MODEL_CARD.md): the AI, what our code adds, accuracy, known failure modes, intended and out-of-scope uses |
+| **24-hour final plan** | [`docs/FINAL_ROUND_PLAN.md`](docs/FINAL_ROUND_PLAN.md): what we build on 4–5 Nov, who does what, risks and fallbacks |
 
 [![Patch 1 in Perungudi, every dry season from 2018 to 2026: marsh until 2022, buildings on all of it by 2025](docs/img/timelapse/p01_strip.jpg)](https://athulyapandian24.github.io/neerkatti/#timelapse)
 
@@ -225,6 +227,7 @@ outputs/         stats.json, top_spots.csv, topten_check.md, close-ups
 docs/            the GitHub Pages site
   index.html       project page
   FINAL_ROUND_PLAN.md  the 24-hour plan for the final
+  MODEL_CARD.md    the model and data card
   img/timelapse/   patch #1 in every dry season (patch_timelapse.py)
   app/             live map: index.html, app.js (page), core.js (logic), app.css
     sw.js          offline copy; manifest.webmanifest and icons/ for installing
@@ -261,6 +264,8 @@ Dynamic World accuracy figures: Brown, C.F. et al. (2022), *Dynamic World, near 
 - **"Built" includes filling.** Two of the nine confirmed patches (#6 and #7) are earth and debris filling, which Dynamic World labels as built.
 - **One study area so far.** The rule has been run on the Pallikaranai watershed box only.
 - **The check by eye is not a ground survey.**
+
+The [model and data card](docs/MODEL_CARD.md) puts the data, the AI, the results, these failure modes and the uses NEERKATTI is not for on one page.
 
 ## Ethics
 

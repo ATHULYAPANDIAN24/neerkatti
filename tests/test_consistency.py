@@ -289,6 +289,33 @@ class Pages(unittest.TestCase):
         for s in (f"{self.meta['lost_ha']} ha", f"{self.meta['patch_count']} patches", f"≈{self.acres} acres", "9 of the top 10"):
             self.assertIn(s, self.readme)
 
+    def test_model_card_numbers(self):
+        # docs/MODEL_CARD.md: the results table and the failure modes match the data
+        card = read("docs/MODEL_CARD.md")
+        props = [f["properties"] for f in self.patches["features"]]
+        levels = {k: sum(p["ai_confidence"] == k for p in props) for k in ("high", "medium", "low")}
+        cut = self.meta["confidence_levels"]
+        for s in (f"**{self.meta['lost_ha']} ha**", f"**{self.meta['patch_count']} patches**", "**9 of the top 10**",
+                  f"{levels['high']} high, {levels['medium']} medium and {levels['low']} low",
+                  f"high from {cut['high']:.2f}, medium from {cut['medium']:.2f}",
+                  "**86.7%** user's accuracy", "**36.8%** producer's accuracy",
+                  "the unclear patch (#9) is medium, like six of the nine confirmed ones",
+                  "(#6 and #7) are earth and debris filling", "possible change that needs a ground check"):
+            self.assertIn(s, card)
+        self.assertEqual(self.meta["monsoon"]["date"], "2021-12-26")
+        self.assertIn("26 Dec 2021", card)
+        for rank in (6, 7):
+            self.assertIn("filled with earth", props[rank - 1]["finding"])
+
+    def test_judges_reach_everything_in_one_click(self):
+        # the submitted URL is the live map: its intro and its panel each link every document a judge needs
+        rows = re.findall(r'<nav class="[^"]*\bjudges\b[^"]*" aria-label="For judges">(.*?)</nav>', self.app_html, re.S)
+        self.assertEqual(len(rows), 2)
+        for row in rows:
+            for href in ('href="../#try"', 'href="../"', '/neerkatti#readme"', '/blob/main/docs/FINAL_ROUND_PLAN.md"',
+                         '/blob/main/docs/MODEL_CARD.md"', 'href="data/patches.csv"'):
+                self.assertIn(href, row)
+
     def test_final_round_features_are_labelled_as_plans(self):
         self.assertIn("Final round", self.app)
         self.assertIn("Planned, not built yet", self.app)
@@ -359,6 +386,18 @@ class StaticSite(unittest.TestCase):
                 if ref.endswith("/"):
                     target = target / "index.html"
                 self.assertTrue(target.exists(), f"{rel} links to missing {ref}")
+
+    def test_github_links_point_to_files_in_the_repo(self):
+        # links to files on GitHub (the 24-hour plan, the model card, the top-10 notes) must not break
+        for rel in ("docs/app/index.html", "docs/index.html", "README.md", "docs/MODEL_CARD.md", "docs/FINAL_ROUND_PLAN.md"):
+            for path in re.findall(r"github\.com/ATHULYAPANDIAN24/neerkatti/blob/main/([^\"'#?)\s>]+)", read(rel)):
+                self.assertTrue((ROOT / path).is_file(), f"{rel} links to missing {path}")
+
+    def test_model_card_links_exist(self):
+        card = ROOT / "docs" / "MODEL_CARD.md"
+        for ref in re.findall(r"\]\(([^)#]+)(?:#[^)]*)?\)", card.read_text(encoding="utf-8")):
+            if not re.match(r"https?:", ref):
+                self.assertTrue((card.parent / ref).exists(), f"MODEL_CARD.md links to missing {ref}")
 
 
 if __name__ == "__main__":
