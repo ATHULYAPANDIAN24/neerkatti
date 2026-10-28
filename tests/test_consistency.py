@@ -403,6 +403,12 @@ class StaticSite(unittest.TestCase):
             for path in re.findall(r"github\.com/ATHULYAPANDIAN24/neerkatti/blob/main/([^\"'#?)\s>]+)", read(rel)):
                 self.assertTrue((ROOT / path).is_file(), f"{rel} links to missing {path}")
 
+    def test_news_links_point_to_an_article(self):
+        # a link that stops at a date (".../2026/Oct/13/") opens no article
+        for rel in ("docs/app/index.html", "docs/index.html", "README.md", "docs/MODEL_CARD.md"):
+            for url in re.findall(r"https?://[^\"'\s)<>]+", read(rel)):
+                self.assertNotRegex(url, r"/\d{4}/\w{3}/\d{1,2}/?$", f"{rel}: {url}")
+
     def test_model_card_links_exist(self):
         card = ROOT / "docs" / "MODEL_CARD.md"
         for ref in re.findall(r"\]\(([^)#]+)(?:#[^)]*)?\)", card.read_text(encoding="utf-8")):
