@@ -890,8 +890,9 @@
   map.on('zoomend', function () { fitLabels(); spreadPins(); declutter(); });
   map.on('moveend resize', declutter);
 
-  // the bottom padding keeps popups clear of the legend button and the credits line
-  var popup = L.popup({ autoPanPaddingTopLeft: [10, 10], autoPanPaddingBottomRight: [10, 48] });
+  // the top padding keeps popups clear of the season tag (year by year), the bottom one
+  // of the legend button and the credits line
+  var popup = L.popup({ autoPanPaddingTopLeft: [10, 44], autoPanPaddingBottomRight: [10, 48] });
   // the tallest the popup may be: it scrolls inside a short map rather than running off it
   function popupRoom() { return Math.max(220, map.getSize().y - 130); }
 
@@ -1070,7 +1071,20 @@
     ctx.drawImage(img, x, y, 1, 1, 0, 0, 1, 1);
     return ctx.getImageData(0, 0, 1, 1).data;
   }
-  var spotPopup = L.popup({ autoPanPaddingTopLeft: [10, 10], autoPanPaddingBottomRight: [10, 48], className: 'spot-pop' });
+  var spotPopup = L.popup({ autoPanPaddingTopLeft: [10, 44], autoPanPaddingBottomRight: [10, 48], className: 'spot-pop' });
+  // Near the edge of the study area the map cannot pan a popup clear of the season tag
+  // (year by year), so the tag steps aside while a popup sits under it.
+  function tagClear() {
+    var b = singleTag.getBoundingClientRect(), hide = false;
+    [popup, spotPopup].forEach(function (p) {
+      if (!map.hasLayer(p) || !p.getElement()) return;
+      var a = p.getElement().getBoundingClientRect();
+      if (a.left < b.right && a.right > b.left && a.top < b.bottom && a.bottom > b.top) hide = true;
+    });
+    singleTag.classList.toggle('covered', hide);
+  }
+  map.on('popupopen popupclose moveend', function () { setTimeout(tagClear, 0); });
+  [popup, spotPopup].forEach(function (p) { p.on('contentupdate', function () { setTimeout(tagClear, 0); }); });
   var spotMark = null;
   function spotName(i) { return i === 'cloud' ? 'cloud' : i < 0 ? 'unknown' : SPOT_LABELS[i].name; }
   // the season strip: one coloured square per season, then a key for the colours it shows

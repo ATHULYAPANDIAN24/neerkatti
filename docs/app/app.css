@@ -254,6 +254,7 @@ code{font:13px/1.4 Consolas,"Cascadia Mono",monospace;background:var(--tint);pad
 .year-tag.after{left:calc(50% + 10px);background:#C2410C}
 .single-tag{position:absolute;top:10px;left:10px;z-index:500;pointer-events:none}
 .single-tag .year-tag{position:static;display:inline-block}
+.single-tag.covered{visibility:hidden}   /* a popup sits under it (app.js tagClear) */
 
 /* rank pins and popups */
 .rank-pin{background:none;border:0}
