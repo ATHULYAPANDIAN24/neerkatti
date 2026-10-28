@@ -90,6 +90,8 @@ h2{font-size:clamp(26px,3.4vw,34px);margin:0 0 8px;letter-spacing:-.01em;line-he
 @media (prefers-color-scheme:dark){.pill{color:#C9D3E6}}
 .maplink{font-size:14px;font-weight:600;color:var(--accent);text-decoration:none}
 .maplink:hover{text-decoration:underline}
+.hint.judges{margin:14px 0 0;font-size:14px}
+.hint.judges a{color:var(--accent);font-weight:600}
 table{width:100%;border-collapse:collapse;background:var(--card);border-radius:16px;overflow:hidden;box-shadow:var(--shadow);font-size:15px}
 th,td{padding:11px 14px;text-align:left;border-bottom:1px solid var(--line)}
 th{font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);background:var(--tint)}
@@ -269,6 +271,7 @@ footer p{margin:0 0 6px}
       <li><h3>Check the marsh</h3><p>Turn on the protected marsh: 28 of 36 patches lie in it or within 1&nbsp;km.</p><a href="app/?intro=0#marsh=1">Show the marsh →</a></li>
       <li><h3>Take the data</h3><p>All 36 patches with every season's shares, AI confidence and marsh distance, as a spreadsheet.</p><a href="app/data/patches.csv" download="neerkatti_patches.csv">Download the CSV →</a></li>
     </ol>
+    <p class="hint judges">Also for judges: <a href="https://github.com/ATHULYAPANDIAN24/neerkatti#readme">README and code</a> · <a href="https://github.com/ATHULYAPANDIAN24/neerkatti/blob/main/docs/MODEL_CARD.md">model and data card</a> · <a href="https://github.com/ATHULYAPANDIAN24/neerkatti/blob/main/docs/FINAL_ROUND_PLAN.md">24-hour final plan</a></p>
   </section>
 
   <section id="sites">
