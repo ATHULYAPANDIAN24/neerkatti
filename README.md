@@ -2,6 +2,13 @@
 
 [![tests](https://github.com/ATHULYAPANDIAN24/neerkatti/actions/workflows/tests.yml/badge.svg)](https://github.com/ATHULYAPANDIAN24/neerkatti/actions/workflows/tests.yml)
 
+> **For judges, in five lines**
+> 1. **What it is:** a live map of where Chennai's Pallikaranai wetlands turned into buildings, 2018–2026: **28.1 ha in 36 patches**, each a possible change that needs a ground check.
+> 2. **Open it:** <https://athulyapandian24.github.io/neerkatti/app/>, on a phone or a laptop (it works offline too); the [60-second path](#try-it-in-60-seconds) shows what to try.
+> 3. **Where the AI is:** Google's Dynamic World deep-learning model labels every 10 m square of every Sentinel-2 image; our change rule, AI confidence and year-by-year timeline sit on top ([model and data card](docs/MODEL_CARD.md)). Tap any spot on the map to see what the AI saw there.
+> 4. **New in Round 2:** the live map itself: every dry season 2018–2026, 36 patches with close-ups, the year each was built over, the protected marsh and the 2021 floods, the spot question, open CSV, offline use, tests on every push.
+> 5. **In the 24-hour final:** alerts for new changes, a citizen photo check by a vision model, a complaint PDF in Tamil and English, and Sentinel-1 radar ([plan](docs/FINAL_ROUND_PLAN.md)).
+
 **An AI water-keeper for Chennai's wetlands.** NEERKATTI follows the Pallikaranai watershed through every dry season from 2018 to 2026 in free satellite images. Google's Dynamic World AI model labels every 10 m square of land, and our rule flags 2018 water or marsh that is built-up in both 2025 and 2026. Each flagged patch then gets the year it was built over, its distance from the protected marsh, and what it looked like after the 2021 floods.
 
 DEXATHON 2026 · Sustainability Development track · Software · Team Sternritters (DEX26302)
@@ -58,7 +65,7 @@ The top-10 check is a visual check of 2018 | 2026 Sentinel-2 close-ups and curre
 | Charts: hectares built over per season, flagged hectares by zone or village and by distance from the marsh; a what-if for the water the lost marsh could hold | |
 | A list you can sort by size, newest, confidence or area; "near me" (the location stays on the device); a 6-step guided tour that plays itself; shareable links such as `#patch-4&year=2021&layer=labels&marsh=1` | |
 | Works offline once opened, every season included, and installs on a phone's home screen | |
-| Open CSV and GeoJSON; 33 consistency tests and 18 map-logic tests, run by GitHub Actions on every push | |
+| Open CSV and GeoJSON; 40 consistency tests and 18 map-logic tests, run by GitHub Actions on every push | |
 | Extension points for the final: `window.NEERKATTI_API` lets each final-round feature live in its own file | |
 
 The DEXATHON rules say major features are built during the 24-hour final, so the right-hand column is a plan, not code. The hour-by-hour plan for four people, with risks, fallbacks and the data formats, is in [`docs/FINAL_ROUND_PLAN.md`](docs/FINAL_ROUND_PLAN.md).
@@ -96,6 +103,8 @@ flowchart LR
   GJ --> APP["Static web map<br/>Leaflet on GitHub Pages"]
   IMG --> APP
   APP --> SW["Offline copy<br/>sw.js"]
+  APP --> SPOT["Ask the AI about any spot<br/>one 10 m square's label in every season,<br/>read from the label images in the browser"]
+  APP --> EXT["window.NEERKATTI_API<br/>extension points: each final-round<br/>feature plugs in as its own file"]
   TEST["tests/ + GitHub Actions<br/>every number agrees"] -.-> APP
 ```
 

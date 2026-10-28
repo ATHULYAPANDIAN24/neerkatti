@@ -326,6 +326,13 @@ class Pages(unittest.TestCase):
                 self.assertIn(s, text_of(html))
             self.assertIn("/blob/main/docs/FINAL_ROUND_PLAN.md", html)
 
+    def test_readme_counts_the_tests(self):
+        # "39 consistency tests and 18 map-logic tests": the counts in the README are the real ones
+        py = len(re.findall(r"^    def test_", read("tests/test_consistency.py"), re.M))
+        js = len(re.findall(r"^test\(", read("tests/core.test.js"), re.M))
+        claim = f"{py} consistency tests and {js} map-logic tests"
+        self.assertTrue(claim in self.readme, f"README should say: {claim}")
+
     def test_final_round_features_are_labelled_as_plans(self):
         self.assertIn("Final round", self.app)
         self.assertIn("Planned, not built yet", self.app)
