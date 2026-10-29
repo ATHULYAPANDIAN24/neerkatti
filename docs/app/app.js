@@ -1315,11 +1315,15 @@
   }
   $('share').addEventListener('click', function () {
     var url = location.href;
+    // some in-app browsers refuse the clipboard and prompt() too; the address bar has the same link
+    function offer() {
+      try { window.prompt('Copy this link:', url); }
+      catch (e) { say('Copy the link in the address bar: it reopens this exact view.'); }
+    }
     if (navigator.clipboard && window.isSecureContext) {
-      navigator.clipboard.writeText(url).then(function () { say('Link copied. It reopens this exact view.'); },
-        function () { window.prompt('Copy this link:', url); });
+      navigator.clipboard.writeText(url).then(function () { say('Link copied. It reopens this exact view.'); }, offer);
     } else {
-      window.prompt('Copy this link:', url);
+      offer();
     }
   });
 
