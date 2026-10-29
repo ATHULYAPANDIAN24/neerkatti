@@ -232,6 +232,7 @@ code{font:13px/1.4 Consolas,"Cascadia Mono",monospace;background:var(--tint);pad
 .legend-btn[aria-expanded="false"]::after{transform:rotate(-135deg) translate(-1px,-1px)}
 .legend-btn:focus-visible{outline:3px solid var(--orange);outline-offset:3px;border-radius:4px}
 .legend.closed{padding:6px 10px}
+.legend.covered{visibility:hidden}   /* a popup sits over it (app.js tagClear) */
 .legend.closed .legend-body{display:none}
 .legend.closed .legend-btn{padding:0;gap:10px}
 .legend .row{display:flex;align-items:flex-start;gap:7px;margin:3px 0}
@@ -456,7 +457,7 @@ code{font:13px/1.4 Consolas,"Cascadia Mono",monospace;background:var(--tint);pad
 .sp-cell i{display:block;width:100%;max-width:24px;aspect-ratio:1;border-radius:4px;box-shadow:inset 0 0 0 1px rgba(0,0,0,.18)}
 .sp-cell span{font-size:10px;color:var(--muted);font-variant-numeric:tabular-nums;white-space:nowrap}
 .sp-cell.flood{border-left:1px dashed var(--line);padding-left:3px}
-.sp-verdict{font-size:12.5px;line-height:1.45;margin:8px 0 2px !important;padding:6px 8px;border-radius:8px;background:var(--tint)}
+.sp-verdict{font-size:12.5px;line-height:1.45;margin:6px 0 6px !important;padding:6px 8px;border-radius:8px;background:var(--tint)}
 .sp-verdict.passes{background:var(--warn-bg);color:var(--warn-ink)}
 .sp-verdict b{color:inherit}
 .sp-note{font-size:11.5px;color:var(--muted)}

@@ -892,10 +892,11 @@
   map.on('moveend resize', declutter);
 
   // the top padding keeps popups clear of the season tag (year by year), the bottom one
-  // of the legend button and the credits line
-  var popup = L.popup({ autoPanPaddingTopLeft: [10, 44], autoPanPaddingBottomRight: [10, 48] });
-  // the tallest the popup may be: it scrolls inside a short map rather than running off it
-  function popupRoom() { return Math.max(220, map.getSize().y - 130); }
+  // of the credits line; the legend steps aside while a popup covers it (tagClear)
+  var popup = L.popup({ autoPanPaddingTopLeft: [10, 44], autoPanPaddingBottomRight: [10, 28] });
+  // the tallest a popup's content may be: with the paddings, its frame and its tip (137 px)
+  // the whole popup fits the map, and on a short phone map it scrolls rather than running off it
+  function popupRoom() { return Math.max(150, map.getSize().y - 137); }
 
   function unmark(hit) {
     hit.layer.setStyle(styleOf(hit.feature.properties));
@@ -1072,17 +1073,22 @@
     ctx.drawImage(img, x, y, 1, 1, 0, 0, 1, 1);
     return ctx.getImageData(0, 0, 1, 1).data;
   }
-  var spotPopup = L.popup({ autoPanPaddingTopLeft: [10, 44], autoPanPaddingBottomRight: [10, 48], className: 'spot-pop' });
+  var spotPopup = L.popup({ autoPanPaddingTopLeft: [10, 44], autoPanPaddingBottomRight: [10, 28], className: 'spot-pop' });
   // Near the edge of the study area the map cannot pan a popup clear of the season tag
-  // (year by year), so the tag steps aside while a popup sits under it.
+  // (year by year), so the tag steps aside while a popup sits under it. So does the
+  // legend: on a short phone map a popup reaches down to it.
   function tagClear() {
-    var b = singleTag.getBoundingClientRect(), hide = false;
+    var tag = singleTag.getBoundingClientRect(), key = legend._div.getBoundingClientRect();
+    var hideTag = false, hideKey = false;
     [popup, spotPopup].forEach(function (p) {
       if (!map.hasLayer(p) || !p.getElement()) return;
       var a = p.getElement().getBoundingClientRect();
-      if (a.left < b.right && a.right > b.left && a.top < b.bottom && a.bottom > b.top) hide = true;
+      function over(b) { return a.left < b.right && a.right > b.left && a.top < b.bottom && a.bottom > b.top; }
+      if (over(tag)) hideTag = true;
+      if (over(key)) hideKey = true;
     });
-    singleTag.classList.toggle('covered', hide);
+    singleTag.classList.toggle('covered', hideTag);
+    legend._div.classList.toggle('covered', hideKey);
   }
   map.on('popupopen popupclose moveend', function () { setTimeout(tagClear, 0); });
   [popup, spotPopup].forEach(function (p) { p.on('contentupdate', function () { setTimeout(tagClear, 0); }); });
@@ -1126,12 +1132,13 @@
       verdict = 'Some seasons the rule needs did not load, so it cannot be applied here.';
       v.kind = 'missing';
     }
+    // the answer first: on a short phone map the popup scrolls, and the seasons behind it follow
     return '<div class="pop sp">' +
       '<div class="pop-title">What the AI saw on this spot</div>' +
+      '<p class="sp-verdict ' + v.kind + '">' + verdict + '</p>' +
       '<p class="sp-sub">About one 10&nbsp;m square, at ' + at.lat.toFixed(5) + ', ' + at.lng.toFixed(5) + '. The most common Dynamic World label each dry season.</p>' +
       spotCells(names) +
       '<div class="sp-when">’18–’26: Feb–May of each year · Dec: ' + floodDay + ', after the floods</div>' +
-      '<p class="sp-verdict ' + v.kind + '">' + verdict + '</p>' +
       (rank ? '<p class="sp-open"><button type="button" class="btn ghost sp-patch" data-rank="' + rank + '">Open patch #' + rank + '</button></p>' : '') +
       '<div class="pop-foot"><span class="sp-note">Labels can flicker from season to season.</span>' +
       '<a href="https://www.google.com/maps/@' + at.lat.toFixed(5) + ',' + at.lng.toFixed(5) + ',300m/data=!3m1!1e3" target="_blank" rel="noopener">Google Maps (satellite) →</a></div></div>';
@@ -1168,6 +1175,7 @@
     map.closePopup();
     var width = narrow.matches ? 260 : 290;
     spotPopup.options.maxWidth = spotPopup.options.minWidth = width;
+    spotPopup.options.maxHeight = popupRoom();
     spotPopup.setLatLng(at).setContent('<div class="pop sp"><div class="pop-title">What the AI saw on this spot</div><p class="sp-sub">Reading the AI labels…</p></div>').openOn(map);
     readSpot(at).then(function (spot) {
       if (!map.hasLayer(spotPopup) || !spotPopup.getLatLng().equals(at)) return;   // another tap came first
