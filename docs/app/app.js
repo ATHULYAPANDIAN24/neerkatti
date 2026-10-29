@@ -473,7 +473,8 @@
 
   // ---- compare two seasons -------------------------------------------------
   // The divider lives in its own pane (above the pins, below popups), so it is
-  // placed in layer coordinates and moved along with the map.
+  // placed in layer coordinates and moved along with the map. Only its knob takes
+  // the pointer (app.css), so the pins and patches under the line stay tappable.
   var container = map.getContainer();
   map.createPane('swipe').style.zIndex = 660;
   var swipe = L.DomUtil.create('div', 'swipe', map.getPane('swipe'));
@@ -1384,8 +1385,8 @@
   var TOUR = [
     {
       title: 'Compare 2018 and 2026',
-      text: 'Drag the white divider. Left of it is the 2018 dry season, right of it is 2026: real Sentinel-2 satellite images of the same ground.',
-      short: 'Drag the white divider: 2018 on the left, 2026 on the right. Real satellite images of the same ground.',
+      text: 'Drag the ⇔ handle on the white divider. Left of it is the 2018 dry season, right of it is 2026: real Sentinel-2 satellite images of the same ground.',
+      short: 'Drag the ⇔ handle: 2018 on the left, 2026 on the right. Real satellite images of the same ground.',
       run: function () { fresh(); setPlaying(false); state.left = FIRST; state.right = LAST; setMode('compare'); setView('photo'); home(true); setTimeout(sweep, calm.matches ? 0 : 900); }
     },
     {

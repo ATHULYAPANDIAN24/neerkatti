@@ -244,10 +244,11 @@ code{font:13px/1.4 Consolas,"Cascadia Mono",monospace;background:var(--tint);pad
 .legend .short{display:none}
 
 /* year compare */
-.swipe{position:absolute;width:36px;margin-left:-18px;cursor:ew-resize;touch-action:none}
+/* only the knob takes the pointer: the line runs over pins and patches, which must stay tappable */
+.swipe{position:absolute;width:36px;margin-left:-18px;pointer-events:none}
 .swipe::before{content:"";position:absolute;top:0;bottom:0;left:50%;width:3px;margin-left:-1.5px;background:#fff;box-shadow:0 0 0 1px rgba(0,0,0,.3)}
 .swipe .knob{position:absolute;top:50%;left:50%;width:42px;height:42px;transform:translate(-50%,-50%);border-radius:50%;border:0;background:#fff;color:var(--navy);
-  display:grid;place-items:center;font:800 16px/1 Inter,system-ui,sans-serif;box-shadow:0 2px 10px rgba(0,0,0,.35);cursor:ew-resize;padding:0}
+  display:grid;place-items:center;font:800 16px/1 Inter,system-ui,sans-serif;box-shadow:0 2px 10px rgba(0,0,0,.35);cursor:ew-resize;padding:0;pointer-events:auto;touch-action:none}
 .swipe .knob:focus-visible{outline:3px solid var(--orange);outline-offset:3px}
 .year-tag{position:absolute;top:10px;padding:3px 11px;border-radius:999px;font-size:13px;font-weight:700;color:#fff;white-space:nowrap;pointer-events:none;box-shadow:0 1px 4px rgba(0,0,0,.3)}
 .year-tag.before{right:calc(50% + 10px);background:var(--navy)}
