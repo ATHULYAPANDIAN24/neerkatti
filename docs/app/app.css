@@ -400,6 +400,7 @@ code{font:13px/1.4 Consolas,"Cascadia Mono",monospace;background:var(--tint);pad
   .hide-sm{display:none}
   .bar-btn .long,.map-hint .long{display:none}
   .bar-btn .short,.map-hint .short{display:inline}
+  .map-hint{max-width:calc(100% - 112px)}   /* one line at 360 px, clear of the folded legend */
   .toolbar{padding:8px;gap:6px 8px}
   .seg span{padding:6px 9px;font-size:13px}
   .tb-hint,.chk-names,.tb-pick > span{display:none}   /* the selects keep their labels for screen readers */
