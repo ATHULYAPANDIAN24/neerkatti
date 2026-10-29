@@ -218,16 +218,16 @@ Then open <http://localhost:8765/app/>. Opening `docs/app/index.html` straight f
 
 ## Quality checks
 
-[PageSpeed Insights](https://pagespeed.web.dev/analysis/https-athulyapandian24-github-io-neerkatti-app/sl03a9co6u?form_factor=mobile) (Lighthouse 13.5.0) on the live map, 28 Oct 2026, 13:27 IST:
+[PageSpeed Insights](https://pagespeed.web.dev/analysis/https-athulyapandian24-github-io-neerkatti-app/1t9l0f4z08?form_factor=mobile) (Lighthouse 13.5.0) on the live map, two runs on 29 Oct 2026 at 12:34 and [12:36 IST](https://pagespeed.web.dev/analysis/https-athulyapandian24-github-io-neerkatti-app/pjfxdytipn?form_factor=mobile):
 
 | Live map | Performance | Accessibility | Best practices | SEO |
 |---|---|---|---|---|
-| Phone (emulated Moto G Power, slow 4G) | 93 | 100 | 96 | 100 |
-| Desktop | 98 | 100 | 100 | 100 |
+| Phone (emulated Moto G Power, slow 4G) | 72, 73 | 100 | 96 | 100 |
+| Desktop | 99, 96 | 100 | 100 | 100 |
 
-The offline copy of every season is saved after the page has loaded, so it is not part of the page weight PageSpeed measures.
+On the phone the score is held back by Largest Contentful Paint (5.5 and 5.3 s): the 2026 satellite photo is drawn once Leaflet, the map's data and its code have loaded over the slow emulated connection. Since 29 Oct the full photo is fetched only where it shows more than the light one; before that it was the largest paint, at 8.1 s (Performance 68 in two runs that morning). The offline copy of every season is saved after the page has loaded, so it is not part of the page weight PageSpeed measures.
 
-- **axe-core 4.10:** no violations on the live map (the intro, a patch card, a spot popup, the tour, the AI labels with the marsh outline, the year player) or on the project page, in light and dark, at desktop and phone width; checked again on 28 Oct after that day's changes.
+- **axe-core 4.10:** no violations on the live map (the intro, a patch card, a spot popup, the tour, the AI labels with the marsh outline, the year player) or on the project page, in light and dark, at desktop and phone width; checked again on 29 Oct after that day's fixes.
 - **Offline:** with the server stopped, the map reloads from the offline copy, plays every season's photo and AI labels, shows the 2021 flood image and still answers the spot question.
 - **The one best-practice note:** OpenStreetMap's base tiles are 256 px and look soft on high-density phone screens. Sharper tiles would mean four times as many requests to OSM's volunteer-run servers, so we left them.
 
