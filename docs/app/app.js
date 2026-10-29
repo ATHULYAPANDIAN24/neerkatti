@@ -798,6 +798,12 @@
     });
     pin.on('click', function () { endTour(); select(p.rank, { fly: true }); });
     pins.addLayer(pin);
+    // Leaflet opens only a bound popup on Enter; the pin is a button, so Enter and Space open its patch
+    pin.getElement().addEventListener('keydown', function (e) {
+      if (e.key !== 'Enter' && e.key !== ' ') return;
+      e.preventDefault();
+      endTour(); select(p.rank, { fly: true });
+    });
     byRank[p.rank].pin = pin;
   });
 
@@ -1541,7 +1547,13 @@
   $('coach-next').addEventListener('click', function () { next(true); });
   $('coach-back').addEventListener('click', function () { if (tourStep > 0) showStep(tourStep - 1, true); });
   $('coach-x').addEventListener('click', endTour);
-  document.addEventListener('keydown', function (e) { if (e.key === 'Escape' && tourStep >= 0) endTour(); });
+  // Escape ends the tour; otherwise it closes an open card wherever the focus is (Leaflet
+  // only listens while the map itself has focus, not a pin). An open dialog takes it first.
+  document.addEventListener('keydown', function (e) {
+    if (e.key !== 'Escape' || document.querySelector('dialog[open]')) return;
+    if (tourStep >= 0) endTour();
+    else if (map.hasLayer(popup) || map.hasLayer(spotPopup)) map.closePopup();
+  });
   L.DomEvent.disableClickPropagation(coach);
   L.DomEvent.disableScrollPropagation(coach);
   $('start-tour').addEventListener('click', function () { startTour(true); });
