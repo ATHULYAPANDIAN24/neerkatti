@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title>Page not found · NEERKATTI</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Ccircle cx='32' cy='32' r='30' fill='%23253C6D'/%3E%3Cpath d='M32 12C24 24 19 31 19 38a13 13 0 0 0 26 0c0-7-5-14-13-26z' fill='%23F2842F'/%3E%3C/svg%3E">
+<script>
+// GitHub Pages shows this page for any missing address. A capital typed in the live map's
+// address (/neerkatti/App/, say) is the only mistake it can mend: every file under app/ is lower case.
+(function () {
+  var p = location.pathname, low = p.toLowerCase();
+  if (low !== p && (low === '/neerkatti/app' || low.indexOf('/neerkatti/app/') === 0)) location.replace(low + location.search + location.hash);
+})();
+</script>
+<style>
+:root{color-scheme:light dark;--navy:#253C6D;--orange:#F2842F;--accent:#C2410C;--bg:#F6F8FB;--card:#FFFFFF;--ink:#1B2333;--muted:#5B6578;--line:#E2E6EE}
+@media (prefers-color-scheme:dark){:root{--accent:#F2842F;--bg:#0E1422;--card:#161F31;--ink:#E8ECF4;--muted:#9AA6BC;--line:#26324A}}
+*{box-sizing:border-box}
+body{margin:0;min-height:100vh;display:flex;flex-direction:column;background:var(--bg);color:var(--ink);font:16px/1.6 Inter,"Segoe UI",system-ui,-apple-system,sans-serif}
+header{background:var(--navy);color:#fff;padding:14px 20px;font-weight:800;letter-spacing:.08em;font-size:19px}
+header span{color:var(--orange)}
+main{flex:1;display:grid;place-items:center;padding:32px 16px}
+.card{width:100%;max-width:520px;background:var(--card);border:1px solid var(--line);border-radius:16px;padding:28px 24px}
+h1{margin:0 0 8px;font-size:26px;line-height:1.25}
+p{margin:0 0 20px;color:var(--muted)}
+.links{display:flex;flex-wrap:wrap;gap:10px}
+.links a{display:inline-block;padding:9px 16px;border-radius:999px;border:2px solid var(--accent);color:var(--accent);font-weight:700;text-decoration:none}
+.links a.go{background:var(--orange);border-color:var(--orange);color:#1B2333}
+.links a:focus-visible{outline:3px solid var(--orange);outline-offset:3px}
+</style>
+</head>
+<body>
+<header>NEER<span>KATTI</span></header>
+<main>
+  <div class="card">
+    <h1>This page isn't here</h1>
+    <p>The link may be mistyped or out of date. NEERKATTI is a live map of the water and marsh built over in Chennai's Pallikaranai watershed.</p>
+    <div class="links">
+      <a class="go" href="/neerkatti/app/">Open the live map</a>
+      <a href="/neerkatti/">Project page</a>
+      <a href="https://github.com/ATHULYAPANDIAN24/neerkatti">Code on GitHub</a>
+    </div>
+  </div>
+</main>
+</body>
+</html>

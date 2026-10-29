@@ -416,6 +416,15 @@ class StaticSite(unittest.TestCase):
             for url in re.findall(r"https?://[^\"'\s)<>]+", read(rel)):
                 self.assertNotRegex(url, r"/\d{4}/\w{3}/\d{1,2}/?$", f"{rel}: {url}")
 
+    def test_404_page_leads_back_to_the_map(self):
+        # GitHub Pages shows docs/404.html at any missing address, at any depth,
+        # so its links must be absolute and it loads nothing from elsewhere
+        html = read("docs/404.html")
+        for href in ("/neerkatti/app/", "/neerkatti/", "https://github.com/ATHULYAPANDIAN24/neerkatti"):
+            self.assertIn(f'href="{href}"', html)
+        self.assertEqual(re.findall(r"<script[^>]+src=", html), [])
+        self.assertEqual(re.findall(r'(?:src|href)="(?!/neerkatti/|https://github\.com/|data:)[^"]*"', html), [])
+
     def test_readme_local_links_exist(self):
         readme = read("README.md")
         refs = re.findall(r"\]\(([^)#\s]+)(?:#[^)]*)?\)", readme) + re.findall(r'<img src="([^"]+)"', readme)

@@ -72,7 +72,7 @@ The top-10 check is a visual check of 2018 | 2026 Sentinel-2 close-ups and curre
 | Charts: hectares built over per season, flagged hectares by zone or village and by distance from the marsh; a what-if for the water the lost marsh could hold | |
 | A list you can sort by size, newest, confidence or area; "near me" (the location stays on the device); a 6-step guided tour that plays itself; shareable links such as `#patch-4&year=2021&layer=labels&marsh=1` | |
 | Works offline once opened, every season included, and installs on a phone's home screen | |
-| Open CSV and GeoJSON; 41 consistency tests and 18 map-logic tests, run by GitHub Actions on every push | |
+| Open CSV and GeoJSON; 42 consistency tests and 18 map-logic tests, run by GitHub Actions on every push | |
 | Extension points for the final: `window.NEERKATTI_API` lets each final-round feature live in its own file | |
 
 The DEXATHON rules say major features are built during the 24-hour final, so the right-hand column is a plan, not code. The hour-by-hour plan for four people, with risks, fallbacks and the data formats, is in [`docs/FINAL_ROUND_PLAN.md`](docs/FINAL_ROUND_PLAN.md).
@@ -239,6 +239,7 @@ earthengine/     the same rule as a Code Editor script
 outputs/         stats.json, top_spots.csv, topten_check.md, close-ups
 docs/            the GitHub Pages site
   index.html       project page
+  404.html         for a mistyped address: links back to the live map
   FINAL_ROUND_PLAN.md  the 24-hour plan for the final
   MODEL_CARD.md    the model and data card
   img/timelapse/   patch #1 in every dry season (patch_timelapse.py)
