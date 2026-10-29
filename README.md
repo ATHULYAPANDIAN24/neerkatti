@@ -72,7 +72,7 @@ The top-10 check is a visual check of 2018 | 2026 Sentinel-2 close-ups and curre
 | Charts: hectares built over per season, flagged hectares by zone or village and by distance from the marsh; a what-if for the water the lost marsh could hold | |
 | A list you can sort by size, newest, confidence or area; "near me" (the location stays on the device); a 6-step guided tour that plays itself; shareable links such as `#patch-4&year=2021&layer=labels&marsh=1` | |
 | Works offline once opened, every season included, and installs on a phone's home screen | |
-| Open CSV and GeoJSON; 42 consistency tests and 18 map-logic tests, run by GitHub Actions on every push | |
+| Open CSV and GeoJSON; 42 consistency tests and 19 map-logic tests, run by GitHub Actions on every push | |
 | Extension points for the final: `window.NEERKATTI_API` lets each final-round feature live in its own file | |
 
 The DEXATHON rules say major features are built during the 24-hour final, so the right-hand column is a plan, not code. The hour-by-hour plan for four people, with risks, fallbacks and the data formats, is in [`docs/FINAL_ROUND_PLAN.md`](docs/FINAL_ROUND_PLAN.md).
@@ -211,10 +211,10 @@ Then open <http://localhost:8765/app/>. Opening `docs/app/index.html` straight f
 - every patch has a close-up and an AI confidence level that follows from its probabilities, and the images-per-season note matches the data;
 - every season has its photo and labels; each patch's season shares follow the rule (water or marsh in 2018, buildings in 2025 and 2026); the hectares per season add up to 28.1; the marsh, flood and Landsat values are in range; the CSV matches the GeoJSON; and the year-by-year, marsh and flood numbers written on the page match the data;
 - the project page's season-by-season view of patch #1 matches the data, frame by frame;
-- the offline copy keeps every season's light photo and AI labels, and the label images stay lossless at the map's shape (the spot question reads exact colours);
+- the offline copy keeps every season's light photo and AI labels, the light photos are as wide as the map expects, and the label images stay lossless at the map's shape (the spot question reads exact colours);
 - the bundled Leaflet is byte-identical to the published 1.9.4 build, the app loads no script from a CDN, every file the offline copy lists exists, and every local link exists.
 
-[`tests/core.test.js`](tests/core.test.js) (Node's built-in test runner) checks the map's own logic in [`docs/app/core.js`](docs/app/core.js): distances, sorting, zone and village totals, keeping pins and labels apart, the shareable address (seasons, compare sides, marsh outline), the marsh status, the year a patch is drawn as built, the water-storage what-if in lakh and crore litres, and the spot question: which pixel of a label image is under a point, which label a colour is, what the rule makes of a spot's seasons, and whether a point lies in a patch.
+[`tests/core.test.js`](tests/core.test.js) (Node's built-in test runner) checks the map's own logic in [`docs/app/core.js`](docs/app/core.js): distances, sorting, zone and village totals, keeping pins and labels apart, the shareable address (seasons, compare sides, marsh outline), the marsh status, the year a patch is drawn as built, the water-storage what-if in lakh and crore litres, when the full satellite photo is worth fetching, and the spot question: which pixel of a label image is under a point, which label a colour is, what the rule makes of a spot's seasons, and whether a point lies in a patch.
 
 ## Quality checks
 

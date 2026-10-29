@@ -380,10 +380,19 @@
     if (!slots[k]) slots[k] = { view: view, pane: pane, key: null, layer: null, ready: false, full: false };
     return slots[k];
   }
+  // The light photo is LIGHT_W pixels wide: until the study area spans more screen pixels
+  // than that, the full one would show nothing more, so a phone of modest resolution skips
+  // its download until it zooms in (and the light photo stays the page's largest paint).
+  var LIGHT_W = 600;
+  function wantsFull() {
+    var span = map.latLngToContainerPoint(box.getNorthEast()).x - map.latLngToContainerPoint(box.getSouthWest()).x;
+    return core.wantsFull(span, window.devicePixelRatio, LIGHT_W);
+  }
   function upgrade(s) {
     var full = src('photo', s.key, true);
-    if (s.layer._url !== full) s.layer.setUrl(full);
+    if (s.layer._url !== full && wantsFull()) s.layer.setUrl(full);
   }
+  map.on('zoomend', function () { shown().forEach(function (s) { if (s.full && s.ready) upgrade(s); }); });
   function loaded(s) {
     s.ready = true;
     s.failed = false;

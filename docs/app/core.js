@@ -75,6 +75,11 @@
     return Math.round(l).toLocaleString('en-IN') + ' litres';
   }
 
+  // ---- the satellite photos: the light copy first --------------------------------------
+  // The light photo is `lightW` pixels wide (analysis/web_images.py). While the study area
+  // spans fewer screen pixels than that, the full photo would show nothing more.
+  function wantsFull(spanCss, dpr, lightW) { return spanCss * (dpr || 1) > lightW; }
+
   // ---- ask the AI about any spot: read the label images the map already shows ----------
   // The label images cover `box` ([west, south, east, north]) and are stretched to Web
   // Mercator (analysis/web_images.py). Which pixel of a `size` = [w, h] image is at lat, lon?
@@ -197,7 +202,7 @@
   return {
     distance: distance, formatDistance: formatDistance, weakest: weakest, sortPatches: sortPatches,
     nameOf: nameOf, byArea: byArea, builtFrom: builtFrom,
-    marshStatus: marshStatus, storage: storage, indianLitres: indianLitres,
+    marshStatus: marshStatus, storage: storage, indianLitres: indianLitres, wantsFull: wantsFull,
     pixelAt: pixelAt, pixelBounds: pixelBounds, labelOf: labelOf, spotVerdict: spotVerdict, inPolygon: inPolygon,
     overlaps: overlaps, spread: spread, freeSpot: freeSpot, readHash: readHash, hashFor: hashFor
   };

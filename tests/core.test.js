@@ -115,6 +115,14 @@ test('storage: hectares times depth, in Indian units', () => {
   assert.equal(core.indianLitres(2.81e9), '281 crore litres');
 });
 
+test('the full photo is fetched only where the screen shows more than the light copy', () => {
+  assert.equal(core.wantsFull(262, 1.75, 600), false);   // the whole study area on a phone of modest resolution
+  assert.equal(core.wantsFull(262, 3, 600), true);       // the same view on a sharper phone
+  assert.equal(core.wantsFull(400, 1, 600), false);      // the whole study area on a laptop
+  assert.equal(core.wantsFull(800, 1, 600), true);       // the laptop, zoomed in one level
+  assert.equal(core.wantsFull(500, undefined, 600), false);
+});
+
 // ---- ask the AI about any spot ----------------------------------------------------
 const meta = window.NEERKATTI.meta;
 const SIZE = [1039, 1540];   // the label images as the map shows them (analysis/web_images.py)

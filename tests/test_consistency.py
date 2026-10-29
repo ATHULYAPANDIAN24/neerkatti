@@ -51,6 +51,17 @@ def points(coords):
             yield from points(c)
 
 
+def webp_width(path):
+    """Width of a WebP from its header: lossy (VP8), lossless (VP8L) or extended (VP8X)."""
+    head = path.read_bytes()[:30]
+    kind = head[12:16]
+    if kind == b"VP8 ":
+        return int.from_bytes(head[26:28], "little") & 0x3FFF
+    if kind == b"VP8L":
+        return 1 + (int.from_bytes(head[21:25], "little") & 0x3FFF)
+    return 1 + int.from_bytes(head[24:27], "little")
+
+
 class Data(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
@@ -380,6 +391,10 @@ class StaticSite(unittest.TestCase):
         for key in seasons:
             for name in (f"photo_{key}_light.webp", f"labels_{key}.webp"):
                 self.assertTrue((APP / "data" / name).is_file(), name)
+        # the map fetches a full photo only where the screen shows more than the light one (LIGHT_W)
+        light_w = int(re.search(r"var LIGHT_W = (\d+);", read("docs/app/app.js")).group(1))
+        for key in seasons:
+            self.assertEqual(webp_width(APP / "data" / f"photo_{key}_light.webp"), light_w, key)
 
     def test_label_images_are_lossless_at_the_map_shape(self):
         # "ask the AI about any spot" reads a label from the exact colour of one pixel,
