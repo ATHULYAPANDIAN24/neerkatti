@@ -82,7 +82,40 @@
   };
 
   // The paragraphs of one letter, as plain strings (the page and the copied text use the same ones)
+  // RTI follow-up: the same page, asking the office what it did about the complaint (RTI Act 2005)
+  function at(s, n, e) { return s.lat.toFixed(5) + '° ' + n + ', ' + s.lon.toFixed(5) + '° ' + e; }
+  var R = {
+    en: {
+      pio: 'The Public Information Officer',
+      subj: function (s) { return 'Application under Section 6(1) of the Right to Information Act, 2005: action taken on a complaint about ' + s.place + ' (NEERKATTI ' + s.label + ')'; },
+      paras: function (s) {
+        return ['Under Section 6(1) of the Right to Information Act, 2005, I request the following information about a complaint I sent to your office about possible filling of wetland in ' + s.place + ', at ' + at(s, 'N', 'E') + ' (complaint dated ' + BLANK + ', reference number ' + BLANK + ').',
+          '1. The action taken on that complaint, with dates.',
+          '2. A copy of any inspection report or site-visit note about this site.',
+          '3. The name and designation of the officer responsible for acting on the complaint.',
+          '4. If no action has been taken, the reason, as recorded in the file.',
+          'I have paid the application fee of ₹10 by ' + BLANK + '. Please send the information within 30 days, as Section 7(1) of the Act requires.',
+          'If the information is not given, I may file a first appeal under Section 19(1) of the Act.'];
+      }
+    },
+    ta: {
+      pio: 'பொதுத் தகவல் அலுவலர்',
+      subj: function (s) { return 'தகவல் அறியும் உரிமைச் சட்டம், 2005, பிரிவு 6(1)-ன் கீழ் விண்ணப்பம்: ' + s.place + ' பகுதி குறித்த புகாரின் மீது எடுக்கப்பட்ட நடவடிக்கை (NEERKATTI ' + s.id + ')'; },
+      paras: function (s) {
+        return ['தகவல் அறியும் உரிமைச் சட்டம், 2005, பிரிவு 6(1)-ன் கீழ், ' + s.place + ' பகுதியில், ' + at(s, 'வடக்கு', 'கிழக்கு') + ' என்ற இடத்தில் ஈரநிலம் நிரப்பப்பட்டிருக்கக்கூடும் என்பது குறித்து உங்கள் அலுவலகத்திற்கு நான் அனுப்பிய புகார் (தேதி: ' + BLANK + ', பதிவு எண்: ' + BLANK + ') தொடர்பான பின்வரும் தகவல்களைக் கோருகிறேன்.',
+          '1. அந்தப் புகாரின் மீது எடுக்கப்பட்ட நடவடிக்கை, தேதிகளுடன்.',
+          '2. இந்த இடம் குறித்த ஆய்வு அறிக்கை அல்லது கள ஆய்வுக் குறிப்பின் நகல்.',
+          '3. அந்தப் புகாரின் மீது நடவடிக்கை எடுக்கப் பொறுப்பான அலுவலரின் பெயர் மற்றும் பதவி.',
+          '4. நடவடிக்கை எதுவும் எடுக்கப்படவில்லை எனில், கோப்பில் பதிவு செய்யப்பட்டுள்ள காரணம்.',
+          'விண்ணப்பக் கட்டணம் ₹10 ' + BLANK + ' மூலம் செலுத்தியுள்ளேன். சட்டத்தின் பிரிவு 7(1)-ன்படி 30 நாட்களுக்குள் தகவல்களை அனுப்புமாறு கேட்டுக்கொள்கிறேன்.',
+          'தகவல் வழங்கப்படாவிட்டால், சட்டத்தின் பிரிவு 19(1)-ன் கீழ் முதல் மேல்முறையீடு செய்யலாம் என்பதைத் தெரிவித்துக்கொள்கிறேன்.'];
+      }
+    }
+  };
+  function tx(lang) { return form.kind === 'rti' ? Object.assign({}, T[lang], R[lang]) : T[lang]; }
+
   function body(s, lang) {
+    if (form.kind === 'rti') return R[lang].paras(s);
     var t = T[lang];
     var out = [t.ask(s), t.seen(s), t.marsh(s)];
     if (s.wet_monsoon !== null && s.wet_monsoon !== undefined) out.push(t.flood(s));
@@ -91,9 +124,10 @@
     return out;
   }
   function office(lang) {
-    if (form.to === 'other') return form.other ? form.other.split('\n') : [BLANK];
-    var o = OFFICES.filter(function (x) { return x.id === form.to; })[0] || OFFICES[0];
-    return o[lang];
+    var o;
+    if (form.to === 'other') o = form.other ? form.other.split('\n') : [BLANK];
+    else o = (OFFICES.filter(function (x) { return x.id === form.to; })[0] || OFFICES[0])[lang];
+    return form.kind === 'rti' ? [R[lang].pio].concat(o) : o;
   }
   function sender() {
     var lines = [form.name || BLANK].concat(form.addr ? form.addr.split('\n') : [BLANK]);
@@ -103,7 +137,7 @@
   function lines(list) { return list.map(esc).join('<br>'); }
 
   function pageHtml(s, lang) {
-    var t = T[lang], today = new Date();
+    var t = tx(lang), today = new Date();
     return '<article class="nk-page" lang="' + lang + '">' +
       '<p class="nk-date">' + t.date + ': ' + day(today, lang) + '</p>' +
       '<div class="nk-addrs"><div><p class="nk-lbl">' + t.from + '</p><p>' + lines(sender()) + '</p></div>' +
@@ -118,7 +152,7 @@
       '</article>';
   }
   function plainText(s, lang) {
-    var t = T[lang];
+    var t = tx(lang);
     return [t.date + ': ' + day(new Date(), lang), '', t.from + ':'].concat(sender(), ['', t.to + ':'], office(lang),
       ['', t.subject + ': ' + t.subj(s), '', t.dear, ''], body(s, lang).join('\n\n'), ['', t.thanks, '', t.close, form.name || BLANK, '', t.src(s)]).join('\n');
   }
@@ -127,7 +161,7 @@
   // ---- the sheet ------------------------------------------------------------------
   var saved = {};
   try { saved = JSON.parse(F.store('neerkatti-letter-me') || '{}') || {}; } catch (e) { saved = {}; }
-  var form = { lang: 'both', to: 'wetland', other: '', name: saved.name || '', addr: saved.addr || '', contact: saved.contact || '' };
+  var form = { kind: 'complaint', lang: 'both', to: 'wetland', other: '', name: saved.name || '', addr: saved.addr || '', contact: saved.contact || '' };
   var site = null;
 
   var sheet = document.createElement('dialog');
@@ -139,6 +173,10 @@
     '<button type="button" class="nk-x" id="nk-letter-x" aria-label="Close the letter">×</button></div>' +
     '<div class="nk-sheet-body">' +
     '<form class="nk-form" id="nk-letter-form" autocomplete="on">' +
+    '<div class="nk-field"><span class="nk-flbl" id="nk-kind-lbl">Letter</span><fieldset class="seg" aria-labelledby="nk-kind-lbl">' +
+    '<label><input type="radio" name="nk-kind" value="complaint" checked><span>Complaint</span></label>' +
+    '<label><input type="radio" name="nk-kind" value="rti"><span>RTI follow-up</span></label></fieldset></div>' +
+    '<p class="nk-note" id="nk-rti-note" hidden>Send this if your complaint gets no action in 30 days. Under the RTI Act 2005 the office must reply within 30 days. The fee in Tamil Nadu is ₹10.</p>' +
     '<div class="nk-field"><span class="nk-flbl" id="nk-lang-lbl">Language</span><fieldset class="seg" aria-labelledby="nk-lang-lbl">' +
     '<label><input type="radio" name="nk-lang" value="en"><span>English</span></label>' +
     '<label><input type="radio" name="nk-lang" value="ta"><span lang="ta">தமிழ்</span></label>' +
@@ -157,7 +195,7 @@
     '<button type="button" class="btn ghost" id="nk-copy">Copy text</button>' +
     '<a class="btn ghost" id="nk-mail" href="mailto:">Email it</a></div>' +
     '<p class="nk-status" id="nk-status" role="status" aria-live="polite"></p>' +
-    '<p class="nk-note">The letter asks for an inspection. It never names an owner and never says anything is illegal.</p>' +
+    '<p class="nk-note">The letter never names an owner and never says anything is illegal.</p>' +
     '</form>' +
     '<div class="nk-preview" id="nk-preview" aria-label="Letter preview"></div></div>';
   document.body.appendChild(sheet);
@@ -172,12 +210,15 @@
   function render() {
     if (!site) return;
     var ls = langs();
+    $('nk-letter-title').textContent = form.kind === 'rti' ? 'RTI follow-up letter' : 'Complaint letter';
+    $('nk-rti-note').hidden = form.kind !== 'rti';
     $('nk-preview').innerHTML = ls.map(function (l) { return pageHtml(site, l); }).join('');
     var text = ls.map(function (l) { return plainText(site, l); }).join('\n\n----------\n\n');
-    $('nk-mail').href = 'mailto:?subject=' + encodeURIComponent(T[ls[0]].subj(site)) + '&body=' + encodeURIComponent(text);
+    $('nk-mail').href = 'mailto:?subject=' + encodeURIComponent(tx(ls[0]).subj(site)) + '&body=' + encodeURIComponent(text);
   }
   function fill() {
     sheet.querySelectorAll('input[name="nk-lang"]').forEach(function (r) { r.checked = r.value === form.lang; });
+    sheet.querySelectorAll('input[name="nk-kind"]').forEach(function (r) { r.checked = r.value === form.kind; });
     $('nk-to').value = form.to;
     $('nk-other-wrap').hidden = form.to !== 'other';
     $('nk-other').value = form.other;
@@ -189,6 +230,7 @@
   sheet.addEventListener('input', function (e) {
     var el = e.target;
     if (el.name === 'nk-lang') form.lang = el.value;
+    else if (el.name === 'nk-kind') form.kind = el.value;
     else if (el.id === 'nk-to') { form.to = el.value; $('nk-other-wrap').hidden = form.to !== 'other'; }
     else if (el.id === 'nk-other') form.other = el.value;
     else if (el.id === 'nk-name') form.name = el.value.trim();

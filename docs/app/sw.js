@@ -2,7 +2,7 @@
 // opened, so it still works with no connection (a venue with poor Wi-Fi, say).
 // Online, every request still goes to the network first, so a new version shows
 // at once; the saved copy is only the fallback. tests/ checks the list below.
-var VERSION = 'neerkatti-f-2';
+var VERSION = 'neerkatti-f-3';
 var SHELL = VERSION + '-shell';
 var TILES = VERSION + '-tiles';
 var MAX_TILES = 400;

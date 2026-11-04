@@ -194,7 +194,9 @@
     '<h4 class="m3-next-h">What happens next</h4><ol class="m3-next">' +
     '<li><b>You send it</b> to the Tamil Nadu State Wetland Authority, the Greater Chennai Corporation or the Forest Department, whichever the letter is addressed to.</li>' +
     '<li><b>The office logs it and inspects</b> the coordinates in the letter, and gives you a reference number.</li>' +
-    '<li><b>You follow up</b> with that reference number until there is an answer.</li></ol>' +
+    '<li><b>You follow up</b> with that reference number until there is an answer.</li>' +
+    '<li><b>No action in 30 days?</b> Choose <i>RTI follow-up</i> in the letter. By law the office must reply within 30 days.</li>' +
+    '<li><b>Still no answer?</b> File a first appeal with the senior officer, and share the evidence with NGOs, the press or a lawyer.</li></ol>' +
     '<p class="small m3-next-note">' + icon('info') + 'NEERKATTI does not yet track what the office does next.</p></div></section>' +
     '<section class="m3-card m3-act" aria-labelledby="m3-act-photo"><span class="m3-act-ic">' + icon('photo_camera') + '</span><div>' +
     '<h3 id="m3-act-photo">Report what you see <span class="m3-soon-tag" id="m3-photo-soon">' + icon('schedule') + 'Coming</span></h3>' +
