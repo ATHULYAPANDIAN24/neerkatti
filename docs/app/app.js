@@ -18,6 +18,11 @@
   var state = { mode: 'compare', left: FIRST, right: LAST, year: LAST, view: 'photo', pos: 0.5, patches: true, marsh: false };
   var map = null;
   var mapApi = null;   // set once the map has started: pick, fitRanks, showYou, showYear, showMarsh, showFlood
+  // Final round (?final=1, final/ui.js): the parts of the map that floating panels cover, in px,
+  // so flights land in the part left free; and whether a patch's card shows in the page's own
+  // panel instead of a popup. Both stay off in the Round 2 layout.
+  var insets = { top: 0, right: 0, bottom: 0, left: 0 };
+  var ownCard = false;
 
   // Keep a copy on the device, so the map opens without a connection (sw.js)
   if ('serviceWorker' in navigator && (location.protocol === 'https:' || /^(localhost|127\.0\.0\.1)$/.test(location.hostname))) {
@@ -331,8 +336,12 @@
     var size = map.getSize();
     if (!size.x || !size.y) { map.setView(box.getCenter(), 12); return; }
     fitted = true;
-    if (animate) map.flyToBounds(box, { padding: [8, 8], duration: 0.8 });
-    else map.fitBounds(box, { padding: [8, 8] });
+    if (animate) map.flyToBounds(box, L.extend(pads(8), { duration: 0.8 }));
+    else map.fitBounds(box, pads(8));
+  }
+  // Leaflet's fit padding: `px` all round, plus whatever the floating panels cover
+  function pads(px) {
+    return { paddingTopLeft: [px + insets.left, px + insets.top], paddingBottomRight: [px + insets.right, px + insets.bottom] };
   }
   home(false);
 
@@ -499,12 +508,14 @@
     var size = map.getSize();
     var nw = map.containerPointToLayerPoint([0, 0]);
     var se = map.containerPointToLayerPoint(size);
-    var x = nw.x + size.x * state.pos;
+    var x = nw.x + divX(size);
     paneBefore.style.clip = 'rect(' + nw.y + 'px,' + x + 'px,' + se.y + 'px,' + nw.x + 'px)';
     swipe.style.left = x + 'px';
     swipe.style.top = nw.y + 'px';
     swipe.style.height = size.y + 'px';
   }
+  // the divider's x on the map: `pos` is a share of the part the floating panels leave free (all of it in Round 2)
+  function divX(size) { return insets.left + (size.x - insets.left - insets.right) * state.pos; }
   function knobText() {
     var pct = Math.round(state.pos * 100);
     knob.setAttribute('aria-label', 'Compare: ' + keyLong(state.left) + ' on the left, ' + keyLong(state.right) + ' on the right');
@@ -519,7 +530,7 @@
   var dragging = false;
   function dragTo(e) {
     var r = container.getBoundingClientRect();
-    setPos((e.clientX - r.left) / r.width);
+    setPos((e.clientX - r.left - insets.left) / Math.max(1, r.width - insets.left - insets.right));
   }
   swipe.addEventListener('pointerdown', function (e) {
     stopSweep(); dragging = true; swipe.setPointerCapture(e.pointerId); e.preventDefault(); dragTo(e);
@@ -884,7 +895,7 @@
       });
     }
     if (state.mode === 'compare') {
-      var size = map.getSize(), kx = size.x * state.pos, ky = size.y / 2;
+      var size = map.getSize(), kx = divX(size), ky = insets.top + (size.y - insets.top - insets.bottom) / 2;
       boxes.push([kx - 26, ky - 26, kx + 26, ky + 26]);
     }
     names.eachLayer(function (m) {
@@ -911,7 +922,7 @@
   var popup = L.popup({ autoPanPaddingTopLeft: [10, 44], autoPanPaddingBottomRight: [10, 28] });
   // the tallest a popup's content may be: with the paddings, its frame and its tip (137 px)
   // the whole popup fits the map, and on a short phone map it scrolls rather than running off it
-  function popupRoom() { return Math.max(150, map.getSize().y - 137); }
+  function popupRoom() { return Math.max(150, map.getSize().y - 137 - insets.top - insets.bottom); }
 
   function unmark(hit) {
     hit.layer.setStyle(styleOf(hit.feature.properties));
@@ -923,6 +934,7 @@
     selected = null;
     markList(-1);
     writeHash();
+    emit('clear');
   }
   map.on('popupclose', function (e) { if (e.popup === popup) clearSelection(); });
   map.on('popupopen', function (e) {
@@ -937,9 +949,11 @@
   // phone map that strip can be thin, so it never shrinks below 60 px.
   function flyInto(b, top, bottom) {
     var size = map.getSize();
+    top += insets.top;
+    bottom += insets.bottom;
     var room = Math.max(60, size.y - top - bottom);
-    var z = Math.min(16, map.getBoundsZoom(b, false, L.point(80, size.y - room)));
-    var c = map.unproject(map.project(b.getCenter(), z).add([0, (bottom - top) / 2]), z);
+    var z = Math.min(16, map.getBoundsZoom(b, false, L.point(80 + insets.left + insets.right, size.y - room)));
+    var c = map.unproject(map.project(b.getCenter(), z).add([(insets.right - insets.left) / 2, (bottom - top) / 2]), z);
     map.flyTo(c, z, { duration: calm.matches ? 0 : 0.9 });
     return { center: c, zoom: z };
   }
@@ -963,7 +977,6 @@
   function select(rank, opts) {
     var hit = byRank[rank];
     if (!hit) return;
-    emit('select', hit.feature.properties);
     opts = opts || {};
     map.closePopup();
     if (selected) unmark(selected);   // a selection made without a popup has no popupclose to clear it
@@ -974,6 +987,19 @@
     markList(rank);
     var p = hit.feature.properties;
     var b = hit.layer.getBounds();
+    emit('select', p);   // after the old selection is cleared, so a listener sees this one
+    if (ownCard) {
+      // the page shows the card in its own panel: the map only brings the patch into the free part
+      if (opts.fly) {
+        var into = flyInto(b, 50, opts.padBottom || 30);
+        whenThere(into, function () { if (selected === hit && opts.then) opts.then(); });
+      } else {
+        map.panInside(b.getCenter(), pads(40));
+        if (opts.then) opts.then();
+      }
+      writeHash();
+      return;
+    }
     var width = narrow.matches ? 260 : 310;
     popup.options.maxWidth = popup.options.minWidth = width;
     popup.options.maxHeight = popupRoom();
@@ -985,7 +1011,7 @@
       var to = flyInto(b, noPopup ? 50 : popupRoom() + 40, opts.padBottom || 30);
       whenThere(to, function () {
         if (selected !== hit) return;
-        if (!noPopup) popup.openOn(map);
+        if (!noPopup && !ownCard) popup.openOn(map);   // the panel may have taken over the card during the flight
         if (opts.then) opts.then();
       });
     } else {
@@ -1000,7 +1026,8 @@
   function watchSeason(y) {
     var hit = watching && byRank[watching];
     if (!hit) return;
-    var p = hit.feature.properties, el = popup.getElement();
+    var p = hit.feature.properties, el = !ownCard && popup.getElement();
+    emit('watch', y ? { rank: watching, year: y } : null);   // the page's own card follows the seasons too
     if (el) {
       el.querySelectorAll('.tl-col').forEach(function (c) { c.classList.toggle('now', c.dataset.year === y); });
       var btn = el.querySelector('.tl-play');
@@ -1027,13 +1054,15 @@
     function start() {
       watching = rank;
       onSeason = watchSeason;
-      var el = popup.getElement();
-      L.DomUtil.addClass(el, 'watching');
-      popup.update();
-      var to = flyInto(hit.layer.getBounds(), el.offsetHeight + 30, 30);
+      var el = !ownCard && popup.getElement();   // with the card in the page's panel there is no popup to fold
+      if (el) {
+        L.DomUtil.addClass(el, 'watching');
+        popup.update();
+      }
+      var to = flyInto(hit.layer.getBounds(), el ? el.offsetHeight + 30 : 50, 30);
       whenThere(to, function () { if (watching === rank) setPlaying(true, { full: true, from: FIRST }); });
     }
-    if (selected === hit && map.hasLayer(popup)) start();
+    if (selected === hit && (ownCard || map.hasLayer(popup))) start();
     else select(rank, { fly: true, then: start });
   }
   // one listener on the popup itself: its content is redrawn (when the close-up arrives, say), its box is not
@@ -1232,6 +1261,12 @@
       layer: state.view, marsh: state.marsh
     });
     if (h !== location.hash) history.replaceState(null, '', location.pathname + location.search + h);
+    emit('view', viewNow());
+  }
+  // what the map shows now, for the page's own controls (final round)
+  function viewNow() {
+    return { mode: state.mode, left: state.left, right: state.right, year: state.year, layer: state.view, marsh: state.marsh,
+      patches: state.patches, playing: playing, patch: selected ? selected.feature.properties.rank : null };
   }
   function applyHash(fly) {
     var h = core.readHash(location.hash);
@@ -1243,7 +1278,7 @@
     setView(h.layer === 'labels' ? 'labels' : 'photo');
     if ((h.marsh === '1') !== state.marsh) setMarsh(h.marsh === '1');
     if (h.patch && byRank[h.patch]) select(h.patch, { fly: fly });
-    else if (selected) map.closePopup();
+    else if (selected) { map.closePopup(); if (ownCard) clearSelection(); }   // no popup to close: clear it here
   }
   window.addEventListener('hashchange', function () { applyHash(true); });
 
@@ -1302,6 +1337,7 @@
     legend.update();
     if (on) spreadPins();
     declutter();
+    emit('view', viewNow());
   }
   document.querySelectorAll('input[name="mode"]').forEach(function (r) {
     r.addEventListener('change', function () { endTour(); setMode(r.value); });
@@ -1353,7 +1389,7 @@
     ranks.forEach(function (r) { b.extend(byRank[r].layer.getBounds()); });
     map.closePopup();
     showMap();
-    map.flyToBounds(b, { padding: [pad || 40, pad || 40], maxZoom: 16, duration: calm.matches ? 0 : 0.9 });
+    map.flyToBounds(b, L.extend(pads(pad || 40), { maxZoom: 16, duration: calm.matches ? 0 : 0.9 }));
   }
   function compareFlood() {
     setPlaying(false);
@@ -1374,7 +1410,7 @@
       } else you.setLatLng(at);
       map.closePopup();
       showMap();
-      map.flyToBounds(L.latLngBounds([at]).extend(byRank[rank].layer.getBounds()), { padding: [50, 50], maxZoom: 16, duration: calm.matches ? 0 : 0.9 });
+      map.flyToBounds(L.latLngBounds([at]).extend(byRank[rank].layer.getBounds()), L.extend(pads(50), { maxZoom: 16, duration: calm.matches ? 0 : 0.9 }));
     },
     showYear: function (y) {
       endTour();
@@ -1438,6 +1474,8 @@
           var size = map.getSize();
           var dy = narrow.matches ? -(coach.offsetHeight + 20) / 2 : Math.min(size.y / 2 - 40, 150);
           var dx = narrow.matches ? 0 : Math.min(size.x / 4, (coach.offsetWidth + 14) / 2);
+          dx += (insets.left - insets.right) / 2;   // measured from the middle of the part the panels leave free
+          dy += (insets.top - insets.bottom) / 2;
           var to = { center: map.unproject(map.project(at, z).subtract([dx, dy]), z), zoom: z };
           map.flyTo(to.center, z, { duration: calm.matches ? 0 : 0.9 });
           whenThere(to, then);
@@ -1616,7 +1654,7 @@
   // as separate files that load after this one and use only this API, so four people can
   // work at once without editing this file. docs/FINAL_ROUND_PLAN.md has the plan and the
   // data formats. Nothing in the Round 2 map uses it yet.
-  var listeners = { select: [], season: [] };
+  var listeners = { select: [], season: [], clear: [], watch: [], view: [] };
   function emit(name, value) {
     ((listeners && listeners[name]) || []).forEach(function (fn) { try { fn(value); } catch (e) { if (window.console) console.error(e); } });
   }
@@ -1637,8 +1675,31 @@
       // a card already drawn gets the button too, open or still waiting for the map to fly there
       if (selected) popup.setContent(popupHtml(selected.feature.properties));
     },
-    // 'select' (a patch's properties) or 'season' ('2018' …)
-    on: function (name, fn) { if (listeners[name]) listeners[name].push(fn); }
+    // 'select' (a patch's properties), 'season' ('2018' …), 'clear' (no patch selected any more),
+    // 'watch' ({rank, year} for each season a watched patch plays, null when it stops),
+    // 'view' (what the map shows: mode, left, right, year, layer, marsh, patches, playing, patch)
+    on: function (name, fn) { if (listeners[name]) listeners[name].push(fn); },
+    // ---- for a page that lays the map out with floating panels (final/ui.js) ----
+    // {top, right, bottom, left}: px of the map covered by panels; flights and popups keep clear of them
+    setInsets: function (v) {
+      insets = { top: v.top || 0, right: v.right || 0, bottom: v.bottom || 0, left: v.left || 0 };
+      clip();
+      [popup, spotPopup].forEach(function (p) {
+        p.options.autoPanPaddingTopLeft = [10 + insets.left, 44 + insets.top];
+        p.options.autoPanPaddingBottomRight = [10 + insets.right, 28 + insets.bottom];
+      });
+    },
+    // 'panel': a patch's card is drawn by the page (on 'select'); 'popup': the map's own popup (default)
+    setCard: function (where) { ownCard = where === 'panel'; },
+    watch: function (rank) { endTour(); watchPatch(+rank); },   // play one patch's seasons up close
+    clear: function () {   // no patch selected, nothing playing for it, no popup
+      if (watching) { if (playing) setPlaying(false); unwatch(); }
+      map.closePopup();
+      clearSelection();
+    },
+    home: function (animate) { home(!!animate); },
+    state: viewNow,
+    actions: function () { return patchActions.slice(); }   // the buttons added with addPatchAction
   };
   window.NEERKATTI_API = api;
 
