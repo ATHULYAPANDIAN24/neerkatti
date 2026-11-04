@@ -190,7 +190,12 @@
     '<section class="m3-card m3-act" aria-labelledby="m3-act-letter"><span class="m3-act-ic">' + icon('mail') + '</span><div>' +
     '<h3 id="m3-act-letter">Send a complaint letter</h3><p class="small">A dated letter in Tamil and English with the satellite close-up, asking for an inspection. It never names an owner.</p>' +
     '<label class="sr" for="m3-act-patch">Patch</label><select class="m3-select" id="m3-act-patch">' + options + '</select>' +
-    '<button type="button" class="m3-btn filled" id="m3-act-go">' + icon('mail') + 'Write the letter</button></div></section>' +
+    '<button type="button" class="m3-btn filled" id="m3-act-go">' + icon('mail') + 'Write the letter</button>' +
+    '<h4 class="m3-next-h">What happens next</h4><ol class="m3-next">' +
+    '<li><b>You send it</b> to the Tamil Nadu State Wetland Authority, the Greater Chennai Corporation or the Forest Department, whichever the letter is addressed to.</li>' +
+    '<li><b>The office logs it and inspects</b> the coordinates in the letter, and gives you a reference number.</li>' +
+    '<li><b>You follow up</b> with that reference number until there is an answer.</li></ol>' +
+    '<p class="small m3-next-note">' + icon('info') + 'NEERKATTI does not yet track what the office does next.</p></div></section>' +
     '<section class="m3-card m3-act" aria-labelledby="m3-act-photo"><span class="m3-act-ic">' + icon('photo_camera') + '</span><div>' +
     '<h3 id="m3-act-photo">Report what you see <span class="m3-soon-tag" id="m3-photo-soon">' + icon('schedule') + 'Coming</span></h3>' +
     '<p class="small" id="m3-photo-text">At a patch, take a photo and an AI checks it for construction, dumping or sewage. Being built in this final.</p>' +

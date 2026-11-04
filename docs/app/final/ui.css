@@ -668,3 +668,32 @@ html.nk-m3 .nk-status{color:var(--md-primary)}
 @media (prefers-reduced-motion:reduce){
   html.nk-m3 *,html.nk-m3 *::before,html.nk-m3 *::after,html.nk-boot body::before,html.nk-boot body::after{animation:none!important;transition:none!important}
 }
+/* How it works (final/arch.js): the architecture diagram at the top of About */
+.nk-arch-head{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:4px}
+.nk-arch-head h3{margin:0}
+.nk-arch-fig{margin:12px 0 4px;padding:0;background:var(--md-surface-container)}
+.nk-arch-svg{display:block;width:100%;max-width:420px;height:auto;margin:0 auto;font-family:var(--md-font)}
+.nk-a-node rect{fill:var(--md-surface-container-highest);stroke:var(--md-outline-variant);stroke-width:1}
+.nk-a-node.ours rect{fill:var(--md-primary-container);stroke:none}
+.nk-a-t{font-size:14px;font-weight:600;fill:var(--md-on-surface)}
+.nk-a-s{font-size:12px;fill:var(--md-on-surface-variant)}
+.nk-a-who{font-size:11px;fill:var(--md-on-surface-variant)}
+.nk-a-node.ours .nk-a-t,.nk-a-node.ours .nk-a-s,.nk-a-node.ours .nk-a-who{fill:var(--md-on-primary-container)}
+.nk-a-arrow{stroke:var(--md-outline);stroke-width:1.5}
+.nk-a-head{fill:var(--md-outline)}
+.nk-a-cut{stroke:var(--md-primary);stroke-width:1.5;stroke-dasharray:5 4}
+.nk-a-band{font-size:10.5px;font-weight:600;letter-spacing:.8px;fill:var(--md-primary)}
+.nk-arch-key{display:flex;flex-wrap:wrap;align-items:center;justify-content:center;gap:6px;margin-top:8px;color:var(--md-on-surface-variant);font:400 12px/16px var(--md-font)}
+.nk-arch-key .k{width:14px;height:14px;border-radius:4px;background:var(--md-surface-container-highest);border:1px solid var(--md-outline-variant);margin-left:8px}
+.nk-arch-key .k.ours{background:var(--md-primary-container);border-color:transparent;margin-left:0}
+.nk-arch-sub{margin:16px 0 0;font:500 14px/20px var(--md-font);color:var(--md-on-surface)}
+.nk-arch-fig:fullscreen{display:flex;flex-direction:column;justify-content:center;align-items:center;padding:16px;background:var(--md-surface)}
+.nk-arch-fig:fullscreen .nk-arch-svg{max-width:none;width:auto;height:calc(100vh - 64px)}
+/* Act: what happens after the letter */
+.m3-next-h{margin:16px 0 8px;font:500 14px/20px var(--md-font);color:var(--md-on-surface)}
+.m3-next{margin:0;padding:0;list-style:none;counter-reset:nx;display:grid;gap:10px}
+.m3-next li{counter-increment:nx;position:relative;padding-left:34px;min-height:24px;color:var(--md-on-surface-variant);font:400 14px/20px var(--md-font)}
+.m3-next li::before{content:counter(nx);position:absolute;left:0;top:-2px;display:grid;place-items:center;width:24px;height:24px;border-radius:50%;background:var(--md-primary);color:var(--md-on-primary);font:500 12px/1 var(--md-font)}
+.m3-next li b{color:var(--md-on-surface);font-weight:500}
+.m3-next-note{display:flex;gap:8px;align-items:flex-start;margin:12px 0 0!important}
+.m3-next-note .msr{--msr:18px;color:var(--md-on-surface-variant)}
