@@ -475,6 +475,7 @@
       l = 0;
       r = 0;
       var sheetH = tourOn ? 0 : stops()[stop];
+      if (tourOn) html.style.setProperty('--sheet-h', '0px');   // the sheet steps aside for the tour card
       var tl = !tourOn && stop === 'peek' ? timeline.offsetHeight + 8 : 0;
       html.style.setProperty('--tl-h', tl + 'px');
       var attr = mapWrap.querySelector('.leaflet-control-attribution');
@@ -489,6 +490,9 @@
     html.style.setProperty('--in-r', r + 'px');
     html.style.setProperty('--in-b', b + 'px');
     html.style.setProperty('--in-l', l + 'px');
+    // on a phone the tour card sits at the bottom: the compare handle centres in what is left above it
+    if (phone.matches && tourOn) html.style.setProperty('--knob-b', (b + coach.offsetHeight + 8) + 'px');
+    else html.style.removeProperty('--knob-b');
     api.setInsets({ top: t, right: r, bottom: b, left: l });
     L.Popup.prototype.options.autoPanPaddingTopLeft = [l + 12, t + 8];
     L.Popup.prototype.options.autoPanPaddingBottomRight = [r + 12, b + 8];
@@ -510,6 +514,7 @@
     layout();
   }
   new MutationObserver(tourWatch).observe(coach, { attributes: true, attributeFilter: ['hidden'] });
+  if (window.ResizeObserver) new ResizeObserver(function () { if (tourOn) layout(); }).observe(coach);
 
   // ---- chips and Layers follow what the map shows ---------------------------------------------------
   function chip(id) { return chips.querySelector('[data-chip="' + id + '"]'); }
@@ -866,6 +871,15 @@
     if (!coach.hidden || document.querySelector('.leaflet-popup')) return;
     if (current === 'details' || isSub(current)) { back(); e.stopPropagation(); }
   }, true);
+
+  // ---- the snackbar: on a phone the buttons above the sheet rise while it shows --------------------
+  var toastEl = $('toast');
+  function snack() {
+    var on = !toastEl.hidden && phone.matches;
+    html.classList.toggle('m3-snack', on);
+    if (on) html.style.setProperty('--snack-h', (toastEl.offsetHeight + 8) + 'px');
+  }
+  new MutationObserver(snack).observe(toastEl, { attributes: true, attributeFilter: ['hidden'], childList: true, characterData: true, subtree: true });
 
   // ---- notes: the offline one gets its own look -----------------------------------------------------
   function noteKind() { note.classList.toggle('m3-offline', /^Offline/.test(note.textContent)); }

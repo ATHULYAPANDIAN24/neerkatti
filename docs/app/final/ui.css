@@ -130,6 +130,7 @@ html.nk-m3.m3-collapsed .m3-fold .msr{transform:rotate(180deg)}
 .m3-search input::placeholder{color:var(--md-on-surface-variant);opacity:1}
 .m3-search input::-webkit-search-cancel-button{display:none}
 .m3-search-bar:focus-within{outline:2px solid var(--md-primary);outline-offset:-2px}
+html.nk-m3 .m3-search input:focus-visible{outline:none}
 .m3-results{position:absolute;left:0;right:0;top:calc(100% + 8px);max-height:min(460px,calc(100dvh - 120px));overflow-y:auto;padding:8px 0;border-radius:28px;background:var(--md-surface-container-high);box-shadow:var(--md-elev-3);overscroll-behavior:contain}
 .m3-res-h{margin:8px 16px 4px;font:500 12px/16px var(--md-font);letter-spacing:.5px;color:var(--md-on-surface-variant)}
 .m3-res{position:relative;display:flex;align-items:center;gap:16px;width:100%;min-height:56px;padding:8px 24px 8px 16px;border:0;background:none;color:var(--md-on-surface);text-align:left;cursor:pointer;font:inherit}
@@ -251,7 +252,7 @@ html.nk-m3 .swipe .year-tag{top:calc(var(--in-t) + 4px)}
 html.nk-m3 .year-tag.before{background:var(--md-inverse-surface);color:var(--md-inverse-on-surface)}
 html.nk-m3 .year-tag.after{background:var(--md-primary);color:var(--md-on-primary)}
 html.nk-m3 .single-tag{top:calc(var(--in-t) + 4px);left:calc(var(--in-l) + 4px)}
-html.nk-m3 .swipe .knob{top:calc(var(--in-t) + (100% - var(--in-t) - var(--in-b)) / 2);width:48px;height:48px;background:var(--md-surface-container-lowest);color:var(--md-primary);box-shadow:var(--md-elev-3);font:500 18px/1 var(--md-font)}
+html.nk-m3 .swipe .knob{top:calc(var(--in-t) + (100% - var(--in-t) - var(--knob-b,var(--in-b))) / 2);width:48px;height:48px;background:var(--md-surface-container-lowest);color:var(--md-primary);box-shadow:var(--md-elev-3);font:500 18px/1 var(--md-font)}
 html.nk-m3 .rank-pin span{font-family:var(--md-font);font-weight:700}
 html.nk-m3 .place-label span{font-family:var(--md-font);font-weight:500;letter-spacing:.2px}
 html.nk-m3 .leaflet-popup-content-wrapper{border-radius:16px;background:var(--md-surface-container-low);color:var(--md-on-surface);box-shadow:var(--md-elev-3)}
@@ -277,7 +278,8 @@ html.nk-m3 .map-hint svg{color:var(--md-inverse-primary)}
 html.nk-m3 .toast{top:auto;bottom:calc(var(--in-b) + 8px);left:calc(var(--in-l) + (100% - var(--in-l) - var(--in-r)) / 2);transform:translateX(-50%);z-index:60;max-width:min(560px,calc(100% - var(--in-l) - var(--in-r) - 24px));
   min-height:48px;display:flex;align-items:center;padding:14px 16px;border-radius:8px;background:var(--md-inverse-surface);color:var(--md-inverse-on-surface);box-shadow:var(--md-elev-3);font:400 14px/20px var(--md-font);letter-spacing:.25px;white-space:normal;animation:m3-snack .25s var(--md-ease-in)}
 @keyframes m3-snack{from{opacity:0;transform:translate(-50%,8px)}}
-html.nk-m3 .coach{left:calc(var(--in-l) + 4px);bottom:calc(var(--in-b) + 4px);z-index:50;width:min(360px,calc(100% - var(--in-l) - var(--in-r) - 8px));padding:16px 20px 16px;border:0;border-radius:28px;
+@keyframes m3-snack-up{from{opacity:0;transform:translateY(8px)}}
+html.nk-m3 .coach{left:calc(var(--in-l) + 16px);bottom:calc(var(--in-b) + 4px);z-index:50;width:min(340px,calc(100% - var(--in-l) - var(--in-r) - 32px));padding:16px 20px 16px;border:0;border-radius:28px;
   background:var(--md-surface-container-high);color:var(--md-on-surface);box-shadow:var(--md-elev-3)}
 html.nk-m3 .coach-step{color:var(--md-primary);font:500 12px/16px var(--md-font);letter-spacing:.5px;text-transform:none}
 html.nk-m3 .coach-x{display:grid;place-items:center;width:40px;height:40px;margin:-8px -8px 0 0;border-radius:50%;color:var(--md-on-surface-variant)}
@@ -604,14 +606,14 @@ html.nk-m3 .nk-status{color:var(--md-primary)}
   html.nk-m3 .m3-handle{display:flex;align-items:center;justify-content:center;flex:none;width:100%;height:28px;margin:0;padding:0;border:0;background:none;cursor:grab;touch-action:none}
   html.nk-m3 .m3-handle::before{content:"";width:32px;height:4px;border-radius:2px;background:var(--md-on-surface-variant);opacity:.4}
   html.nk-m3 .m3-handle:focus-visible{outline-offset:-3px}
-  html.nk-m3.m3-tour .panel.m3-sheet{transform:translateY(calc(100% + 24px))}
+  html.nk-m3.m3-tour .panel.m3-sheet{transform:translateY(calc(100% + 24px));visibility:hidden;transition:transform .3s var(--md-ease-out),visibility 0s .3s}
   .m3-fold{display:none}
   .m3-search{top:calc(8px + env(safe-area-inset-top,0px));left:12px;right:12px;width:auto}
   .m3-search-bar{height:48px;padding:0 0 0 16px;background:var(--md-surface-container-high);box-shadow:var(--md-elev-2)}
   .m3-search-bar > .msr{margin-right:8px}
   .m3-results{max-height:calc(100dvh - 140px)}
-  .m3-chips{top:calc(60px + env(safe-area-inset-top,0px));left:0;right:0;padding:8px 12px 12px}
-  .m3-layers{top:calc(112px + env(safe-area-inset-top,0px));right:12px}
+  .m3-chips{top:calc(60px + env(safe-area-inset-top,0px));left:0;right:64px;padding:8px 8px 12px 12px}
+  .m3-layers{top:calc(60px + env(safe-area-inset-top,0px));right:12px}
   .m3-pop{width:min(288px,calc(100vw - 24px))}
   .m3-timeline{left:12px;right:12px;width:auto;transform:none;bottom:calc(var(--nav-h) + env(safe-area-inset-bottom,0px) + var(--sheet-h) + 8px);gap:8px;padding:4px 12px 4px 4px;border-radius:24px}
   html.nk-m3 .m3-timeline .seg span{height:40px;padding:0 10px;font-size:14px;gap:0}
@@ -631,7 +633,10 @@ html.nk-m3 .nk-status{color:var(--md-primary)}
   html.nk-m3 .m3-timeline .play{width:40px;height:40px;border-radius:12px}
   html.nk-m3 .m3-timeline .tb-ticks span:nth-child(even){visibility:hidden}
   html.nk-m3 .m3-timeline .tb-out b{font-size:18px;line-height:24px}
-  .m3-fabs{right:12px;bottom:calc(var(--nav-h) + env(safe-area-inset-bottom,0px) + var(--sheet-h) + var(--tl-h) + 16px)}
+  .m3-fabs{right:12px;bottom:calc(var(--in-b) + 4px)}
+  html.nk-m3 .map-hint{left:12px;transform:none;max-width:calc(100% - 84px)}
+  html.nk-m3.m3-snack .m3-fabs{transform:translateY(calc(-1 * var(--snack-h,0px)))}
+  html.nk-m3 .toast{left:12px;right:12px;transform:none;max-width:none;animation-name:m3-snack-up}
   .m3-zoom{display:none}
   html.nk-m3.m3-tall .m3-timeline,html.nk-m3.m3-tall .m3-fabs,html.nk-m3.m3-tour .m3-timeline,html.nk-m3.m3-tour .m3-fabs{opacity:0;visibility:hidden;transform:translateY(16px);transition:opacity .15s,transform .15s,visibility 0s .15s}
   html.nk-m3 .leaflet-bottom.leaflet-right{bottom:calc(var(--nav-h) + env(safe-area-inset-bottom,0px) + var(--sheet-h) + var(--tl-h))}
