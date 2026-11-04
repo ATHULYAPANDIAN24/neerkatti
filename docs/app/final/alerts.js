@@ -60,6 +60,7 @@
         '<span class="year-tag before">Feb–May 2026</span><span class="year-tag after">' + esc(short(a.last_seen)) + '</span></a>' +
         '<figcaption>600&nbsp;m around the alert, outlined in red</figcaption></figure>' : '') +
       '<p>Water or marsh in the 2026 dry season → buildings or bare earth in <b>' + a.times_seen + ' of ' + a.clear_looks + '</b> clear looks since June, first on <b>' + esc(long(a.first_seen)) + '</b>.</p>' +
+      (a.checked_by_eye ? '<p><b>Checked by eye:</b> ' + esc(a.checked_by_eye) + '.</p>' : '') +
       '<ul class="ctx"><li class="marsh ' + a.marsh + '">' + (a.marsh === 'inside' ? '<b>' + (a.marsh_share >= 0.99 ? 'Inside' : F.pct(a.marsh_share) + ' inside') + '</b> the protected marsh outline'
         : a.marsh === 'zone' ? '<b>' + api.core.formatDistance(a.marsh_distance_m) + '</b> from the protected marsh, inside the 1 km zone' : api.core.formatDistance(a.marsh_distance_m) + ' from the protected marsh') + '</li></ul>' +
       '<div class="pop-acts"><button type="button" class="btn ghost pop-act nk-act" data-nk="letter" data-id="' + esc(a.id) + '">Draft a complaint letter</button>' +
@@ -109,7 +110,8 @@
         '<span class="nk-alert-id">' + esc(a.id) + '</span><span class="nk-alert-place">' + esc(a.place) + '</span>' +
         '<span class="nk-alert-ha">' + a.area_ha.toFixed(2) + ' ha</span>' +
         '<span class="nk-alert-meta"><span class="pill nk-where ' + a.marsh + '">' + WHERE[a.marsh] + '</span>' +
-        '<span>First seen ' + esc(short(a.first_seen)) + ' · ' + a.times_seen + ' of ' + a.clear_looks + ' clear looks</span></span></button></li>';
+        '<span>First seen ' + esc(short(a.first_seen)) + ' · ' + a.times_seen + ' of ' + a.clear_looks + ' clear looks</span>' +
+        (a.checked_by_eye ? '<span class="nk-alert-eye">' + esc(a.checked_by_eye.split(':')[0]) + '</span>' : '') + '</span></button></li>';
     }).join('');
   }
 
@@ -122,7 +124,7 @@
     var lastDay = days.length ? days[days.length - 1] : null;
     var checked = days.length + ' clear day' + (days.length === 1 ? '' : 's') + ' of images since June' + (lastDay ? ', the latest on ' + long(lastDay) : '');
     document.getElementById('nk-alerts-lead').innerHTML = list.length
-      ? '<b>' + list.length + ' possible new change' + (list.length === 1 ? '' : 's') + '</b>, <b>' + inZone + '</b> of them in or within 1&nbsp;km of the protected marsh. Checked in ' + esc(checked) + '. Tap one to see it, then draft a complaint or report what you see.'
+      ? '<b>' + list.length + ' possible new change' + (list.length === 1 ? '' : 's') + '</b>, <b>' + inZone + '</b> of them in or within 1&nbsp;km of the protected marsh. Checked in ' + esc(checked) + '. Tap one to see it, then draft a complaint letter' + (F.report ? ' or report what you see' : '') + '.'
       : 'No new changes found in ' + esc(checked) + '. Monsoon clouds hide the ground for weeks at a time, so the next clear day may still show one.';
     document.getElementById('nk-alert-list').innerHTML = listHtml(list);
     var foot = document.getElementById('nk-alerts-foot');

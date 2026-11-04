@@ -90,6 +90,7 @@
 .nk-alert-meta{grid-column:2/4;display:flex;flex-wrap:wrap;gap:4px 8px;align-items:center;font-size:12.5px;color:var(--muted)}
 .pill.nk-where.inside,.pill.nk-where.zone{background:#DDF3EF;color:#0B6B60}
 .pill.nk-where.outside{background:var(--tint);color:var(--ink)}
+.nk-alert-eye{font-weight:700;color:var(--ink)}
 .nk-alerts-foot{margin:4px 0 2px}
 .nk-alerts-foot a{color:var(--accent);font-weight:600}
 .nk-alert-pin{background:none;border:0}
