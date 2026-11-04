@@ -1,0 +1,69 @@
+NEERKATTI - Mentor Feedback Implementation & Improvement
+Team Sternritters - DEXATHON 2026 Final
+Live app: https://athulyapandian24.github.io/neerkatti/app/?final=1
+
+
+WHAT NEERKATTI IS
+NEERKATTI shows where Chennai's Pallikaranai wetland has been turned into buildings.
+It uses free Sentinel-2 satellite images and Google's Dynamic World AI.
+Since 2018, 28.1 hectares of water and marsh have become buildings, in 36 patches.
+Two-thirds of that happened since 2023.
+
+
+1. UNDERSTANDING & PRIORITISATION - the feedback we received
+Our mentors told us two things:
+  - Make the technical architecture clear.
+  - Make our answers clear and simple.
+We fixed the architecture first, because the whole project depends on it.
+
+
+2. HIGH-PRIORITY IMPROVEMENTS - what we implemented
+  - A "How it works" diagram inside the app (About section). It shows every part
+    of the system, why we chose it, and its limits.
+  - Every number on screen now comes directly from the data file.
+    No number is typed in by hand.
+  - We checked every claim against our data and corrected two that said more
+    than the data shows.
+
+
+3. MEASURABLE QUALITY IMPROVEMENT
+  - Hand-typed numbers on screen: 1 -> 0.
+  - Overclaims in our slides: 2 -> 0.
+  - Noise filters: 26 raw detections -> 5 alerts worth checking.
+  - App code: about 67 KB compressed. Works offline after one visit.
+  - A new phone-friendly layout that works on small screens.
+  - A complaint letter generated in Tamil and English.
+
+
+4. TESTING & VALIDATION
+  - 62 automated tests run on every update. All pass.
+  - We tested the live website end to end.
+  - We checked results by eye: 9 of the top 10 patches are real changes and
+    1 is unclear. We show the unclear one too.
+
+
+5. WEAKNESS & RISK RESOLUTION
+  - Risk: our photo-check service used an AI model Google is retiring.
+    Fixed: moved to a supported model (Gemini 3.8 Flash).
+  - Weakness: the AI misses some marsh. So 28.1 hectares is a minimum,
+    and we say so on screen.
+  - Weakness: 10-metre pixels cannot see small dumping. So every patch is marked
+    "possible change, needs a ground check", and the app creates a letter
+    asking an official to inspect.
+  - Risk: no network at the venue. The app works offline after one visit.
+
+
+6. OWNERSHIP, ADAPTABILITY & JUSTIFICATION
+  - No server: free to run, nothing to crash, nothing to hack.
+  - A proven AI model instead of our own: there is no ground truth to train on,
+    so a tested model is more honest.
+  - Unfinished features (photo check, radar) are labelled "Coming".
+    We never fake them.
+  - These changes made NEERKATTI clearer, more reliable and more honest.
+
+
+WHY IT MATTERS NOW
+The Madras High Court is due to hear the case on the marsh's protected zone
+on 11 November 2026. Our nearest alert is about 700 metres from this campus.
+
+Thank you.
