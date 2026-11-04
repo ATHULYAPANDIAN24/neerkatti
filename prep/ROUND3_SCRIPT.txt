@@ -6,9 +6,9 @@ WHO DOES WHAT
   DRIVER    holds the phone and taps. Says nothing.
   CLOSER    opens and closes.
   ARCHITECT explains the system and the numbers.
-  IMPACT    explains the risks and the letter.
+  IMPACT    explains the risks, the photo check and the letters.
 [Brackets] = what the Driver taps. Never read them aloud.
-Speak slowly. Pause after every number. Total speaking time: about 2 min 25 s.
+Speak slowly. Pause after every number. Total speaking time: about 2 min 30 s.
 
 ==================================================================
 
@@ -17,7 +17,7 @@ Speak slowly. Pause after every number. Total speaking time: about 2 min 25 s.
 
 "NEERKATTI finds where Chennai's Pallikaranai wetland became buildings,
 using free satellite images and AI.
-Our mentors gave us two pieces of feedback:
+Our mentors told us two things:
 make the technical architecture clear, and make every answer clear.
 We fixed the architecture first, because everything else depends on it."
 
@@ -26,57 +26,58 @@ We fixed the architecture first, because everything else depends on it."
 0:20  ARCHITECT  -  2. HIGH-PRIORITY IMPROVEMENT
 [About -> How it works]
 
-"So the architecture is now inside the app, on one screen.
-Google Earth Engine runs the Dynamic World AI over free Sentinel-2 satellite images.
-Our rule flags land that was water or marsh in 2018
-and is buildings in both 2025 and 2026.
-The results are small files on your phone:
-no server, no database, no API key."
+"The architecture is now one screen in the app.
+Google's Dynamic World AI labels free Sentinel-2 images.
+Our rule flags water or marsh from 2018 that is buildings in both 2025 and 2026.
+The AI ran once, through Google Earth Engine's Python API.
+The website only reads the saved results.
+The one live API call is the optional photo check,
+through our Worker, which holds the key."
 
 ------------------------------------------------------------------
 
-0:45  ARCHITECT  -  3. MEASURABLE QUALITY IMPROVEMENT
+0:50  ARCHITECT  -  3. MEASURABLE QUALITY IMPROVEMENT
 [Year by year -> drag the slider -> tap patch 1]
 
-"What improved, in numbers:
-every number on screen comes from the data file. None is typed in by hand.
-Our filters cut 26 raw detections down to 5 alerts.
-Our code is 67 kilobytes compressed, and it works offline.
+"In numbers: every number on screen now comes from the data file,
+none typed by hand.
+Our filters cut 26 raw detections to 5 alerts.
 The result: 28.1 hectares of wetland became buildings since 2018,
 two-thirds of it since 2023."
 
 ------------------------------------------------------------------
 
-1:10  CLOSER  -  4. TESTING & VALIDATION
+1:08  CLOSER  -  4. TESTING & VALIDATION
 
-"We tested every change.
-62 automated tests run on every update, and all of them pass.
-We checked the live site end to end.
-And we checked by eye: 9 of the top 10 patches are real changes,
-1 is unclear, and we show that one too."
+"62 automated tests run on every update, and all pass.
+We checked the live site and the photo check end to end.
+By eye, 9 of the top 10 patches are real changes and 1 is unclear,
+and we show that one too."
 
 ------------------------------------------------------------------
 
-1:30  IMPACT  -  5. WEAKNESS & RISK RESOLUTION
-[Act -> Write the letter -> tap the Tamil option]
+1:25  IMPACT  -  5. WEAKNESS & RISK RESOLUTION
+[Act -> point at "Report what you see" -> Write the letter -> tap the Tamil option -> tap RTI follow-up]
 
-"Risks we resolved: two overclaims in our slides, corrected.
+"Risks resolved: two overclaims in our slides, corrected.
 An AI model Google is retiring, replaced before it could break.
-The limit we cannot remove: 10-metre pixels miss small dumping.
-So every patch says 'possible change, needs a ground check',
-and the app turns it into this letter, in Tamil or English,
-asking an official to inspect."
+10-metre pixels miss small dumping, so now a citizen's photo is read
+by Gemini in about 3 seconds: construction, dumping, sewage, no change or unclear.
+We store nothing, and it still says 'needs a ground check'.
+Then this letter, in Tamil or English.
+If a complaint is ignored, the app writes an RTI application,
+and by law the office must answer within 30 days. Then a first appeal.
+The evidence is public and dated."
 
 ------------------------------------------------------------------
 
-1:58  CLOSER  -  6. OWNERSHIP, ADAPTABILITY & JUSTIFICATION
-[Alerts -> tap A3]
+2:05  CLOSER  -  6. OWNERSHIP, ADAPTABILITY & JUSTIFICATION
+[Close the letter -> Alerts -> tap A3]
 
 "We own our decisions.
-No server, so it is free and cannot crash.
+The map needs no server, so it is free and cannot crash.
 A proven AI model, because there is no ground truth to train our own.
-Unfinished features say 'Coming'. They are never faked.
-These changes made NEERKATTI clearer, more reliable and more honest.
+Radar is not built yet, so it says 'Coming'.
 And it matters now: the High Court is due to hear the marsh case on 11 November.
 This alert is 700 metres from this campus.
 Thank you."
@@ -101,6 +102,26 @@ Most important change?
 How do you know it improved?
   "62 tests pass, every number comes from the data, and we fixed two overclaims."
 
+Which AI model?
+  "Google's Dynamic World V1 for the map. The optional photo check uses Gemini 2.5 Flash-Lite."
+
+Does it use any API?
+  "The AI ran once, through Google Earth Engine's Python API. The website only reads
+   the saved results. The one live API call is the optional photo check, through our
+   Worker, which holds the key."
+
+Most landowners are politicians. Even if citizens complain, what can they do?
+  "If a complaint is ignored, the app writes an RTI application, and by law the office
+   must answer within 30 days. Then a first appeal. The evidence is public and dated."
+
+How does the photo check work?
+  "A citizen's photo, read by Gemini in about 3 seconds as construction, dumping, sewage,
+   no change or unclear. We store nothing, and it still says 'needs a ground check'."
+
+Does Google keep the photo?
+  "NEERKATTI keeps nothing. On Google's free tier, Google may use it to improve its AI,
+   so the phone strips GPS first, and we ask people to leave faces out."
+
 How accurate is the AI?
   "86.7% on buildings, 36.8% on marsh. It misses marsh, so our number is a minimum."
 
@@ -108,7 +129,7 @@ Does the AI run on the phone?
   "No. It ran once in Earth Engine. The phone reads the labels it saved."
 
 What is not built yet?
-  "The photo check and the radar layer. They are labelled 'Coming', not faked."
+  "The radar layer. It says 'Coming', not faked."
 
 Has anyone used it?
   "Not yet."
@@ -122,4 +143,6 @@ BEFORE YOU GO ON
   - Each person reads their part aloud 5 times, then says it without paper.
   - Time it once. It must finish under 2:40.
   - Open the live site twice on the demo phone, then try it in airplane mode.
+  - Try one photo check on the venue network. If it fails, say:
+    "The photo check needs a connection. The map and the letter do not."
   - Live link: https://athulyapandian24.github.io/neerkatti/app/?final=1

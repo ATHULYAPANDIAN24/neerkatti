@@ -6,8 +6,8 @@
 > 1. **What it is:** a live map of where Chennai's Pallikaranai wetlands turned into buildings, 2018–2026: **28.1 ha in 36 patches**, each a possible change that needs a ground check.
 > 2. **Open it:** <https://athulyapandian24.github.io/neerkatti/app/>, on a phone or a laptop (it works offline too); the [60-second path](#try-it-in-60-seconds) shows what to try.
 > 3. **Where the AI is:** Google's Dynamic World deep-learning model labels every 10 m square of every Sentinel-2 image; our change rule, AI confidence and year-by-year timeline sit on top ([model and data card](docs/MODEL_CARD.md)). Tap any spot on the map to see what the AI saw there.
-> 4. **New in Round 2:** the live map itself: every dry season 2018–2026, 36 patches with close-ups, the year each was built over, the protected marsh and the 2021 floods, the spot question, open CSV, offline use, tests on every push.
-> 5. **In the 24-hour final:** alerts for new changes, a citizen photo check by a vision model, a complaint PDF in Tamil and English, and Sentinel-1 radar ([plan](docs/FINAL_ROUND_PLAN.md)).
+> 4. **Built before the final:** the live map itself: every dry season 2018–2026, 36 patches with close-ups, the year each was built over, the protected marsh and the 2021 floods, the spot question, open CSV, offline use, tests on every push.
+> 5. **Built in the 24-hour final** ([open it](https://athulyapandian24.github.io/neerkatti/app/?final=1)): alerts for new changes, complaint and RTI follow-up letters in Tamil and English, a "How it works" diagram, and a citizen photo check read by Gemini 2.5 Flash-Lite through our Cloudflare Worker, the one part that needs a connection. Sentinel-1 radar is still to come.
 
 **An AI water-keeper for Chennai's wetlands.** NEERKATTI follows the Pallikaranai watershed through every dry season from 2018 to 2026 in free satellite images. Google's Dynamic World AI model labels every 10 m square of land, and our rule flags 2018 water or marsh that is built-up in both 2025 and 2026. Each flagged patch then gets the year it was built over, its distance from the protected marsh, and what it looked like after the 2021 floods.
 
@@ -15,6 +15,7 @@ DEXATHON 2026 · Sustainability Development track · Software · Team Sternritte
 
 | | |
 |---|---|
+| **Final-round version** | <https://athulyapandian24.github.io/neerkatti/app/?final=1>: the phone-first layout with alerts, letters, the photo check and "How it works" |
 | **Live map (Round 2 prototype)** | <https://athulyapandian24.github.io/neerkatti/app/> |
 | **Project page** | <https://athulyapandian24.github.io/neerkatti/> |
 | **Open data** | [`patches.csv`](docs/app/data/patches.csv) (spreadsheet) and [`patches.geojson`](docs/app/data/patches.geojson) (outlines): every flagged patch with its zone or village, AI confidence, year built over, marsh distance and every season's shares |
@@ -61,21 +62,21 @@ It runs in any browser, on a phone too, and keeps working offline once opened.
 
 The top-10 check is a visual check of 2018 | 2026 Sentinel-2 close-ups and current high-resolution satellite imagery, not a ground survey. Every patch stays a **possible change that needs a ground check**.
 
-## Working now vs final round
+## Before the final vs built in the final
 
-| Working now (Round 2) | Built in the 24-hour final (4–5 Nov) |
+| Working before the final | Built in the 24-hour final (4–5 Nov), at [`?final=1`](https://athulyapandian24.github.io/neerkatti/app/?final=1) |
 |---|---|
-| Every dry season 2018–2026: a year-by-year player in which each patch fills red from the season it was built over, or any two seasons side by side with a draggable divider | Alerts for new changes, first inside the protected marsh's 1 km zone |
-| AI land labels for every 10 m square, every season; tap any spot to see its label in every season and what the rule makes of it | Citizen photo check by a vision model |
-| All 36 flagged patches with 2018 \| 2026 close-ups, what the AI saw there each season, the year it was built over, zone or village names and an AI confidence level; *Watch it 2018–2026* plays any patch's seasons up close; the top 10 checked by eye | Complaint PDF in Tamil and English |
-| The protected marsh (OpenStreetMap outline) and its 1 km zone; the marsh after the 2021 floods; Landsat's water history as a second opinion | Sentinel-1 radar through monsoon clouds |
-| Charts: hectares built over per season, flagged hectares by zone or village and by distance from the marsh; a what-if for the water the lost marsh could hold | |
+| Every dry season 2018–2026: a year-by-year player in which each patch fills red from the season it was built over, or any two seasons side by side with a draggable divider | **Live:** alerts for new changes, first inside the protected marsh's 1 km zone: 5 possible changes, each checked by eye, also as an RSS feed |
+| AI land labels for every 10 m square, every season; tap any spot to see its label in every season and what the rule makes of it | **Live:** a complaint letter in Tamil and English to the office that can act, and an **RTI follow-up** (Section 6(1), RTI Act 2005) for when the complaint gets no action in 30 days, with the first-appeal step |
+| All 36 flagged patches with 2018 \| 2026 close-ups, what the AI saw there each season, the year it was built over, zone or village names and an AI confidence level; *Watch it 2018–2026* plays any patch's seasons up close; the top 10 checked by eye | **Live, online only:** a citizen photo check. The phone shrinks the photo, which drops its GPS data; our Cloudflare Worker ([`serverless/photo-check`](serverless/photo-check/src/index.js)) holds the key, stores nothing and asks Gemini 2.5 Flash-Lite: construction, dumping, sewage, no change or unclear. The answer still says it needs a ground check |
+| The protected marsh (OpenStreetMap outline) and its 1 km zone; the marsh after the 2021 floods; Landsat's water history as a second opinion | **Live:** a phone-first layout with a "How it works" diagram, why each part was chosen, and the limits |
+| Charts: hectares built over per season, flagged hectares by zone or village and by distance from the marsh; a what-if for the water the lost marsh could hold | **Not built yet:** Sentinel-1 radar through monsoon clouds |
 | A list you can sort by size, newest, confidence or area; "near me" (the location stays on the device); a 6-step guided tour that plays itself; shareable links such as `#patch-4&year=2021&layer=labels&marsh=1` | |
 | Works offline once opened, every season included, and installs on a phone's home screen | |
 | Open CSV and GeoJSON; 43 consistency tests and 19 map-logic tests, run by GitHub Actions on every push | |
 | Extension points for the final: `window.NEERKATTI_API` lets each final-round feature live in its own file | |
 
-The DEXATHON rules say major features are built during the 24-hour final, so the right-hand column is a plan, not code. The hour-by-hour plan for four people, with risks, fallbacks and the data formats, is in [`docs/FINAL_ROUND_PLAN.md`](docs/FINAL_ROUND_PLAN.md).
+The DEXATHON rules say major features are built during the 24-hour final. Ours live in [`docs/app/final/`](docs/app/final/), each in its own file, plus the photo-check Worker in [`serverless/photo-check/`](serverless/photo-check/). The plan we started from, with risks, fallbacks and the data formats, is in [`docs/FINAL_ROUND_PLAN.md`](docs/FINAL_ROUND_PLAN.md).
 
 ## Architecture
 
@@ -113,9 +114,12 @@ flowchart LR
   APP --> SPOT["Ask the AI about any spot<br/>one 10 m square's label in every season,<br/>read from the label images in the browser"]
   APP --> EXT["window.NEERKATTI_API<br/>extension points: each final-round<br/>feature plugs in as its own file"]
   TEST["tests/ + GitHub Actions<br/>every number agrees"] -.-> APP
+  APP -.-> PC["Citizen photo check, online only<br/>photo shrunk on the phone, GPS dropped"]
+  PC --> WK["Our Cloudflare Worker<br/>holds the Gemini key as a secret,<br/>stores nothing, 8 checks a minute"]
+  WK --> GEM["Gemini 2.5 Flash-Lite<br/>construction, dumping, sewage,<br/>no change or unclear"]
 ```
 
-Earth Engine map-tile links expire after a few hours, so [`analysis/app_assets.py`](analysis/app_assets.py) exports everything the map shows as static files. The site needs no server, no API key and no Earth Engine login. Leaflet is served from the site itself ([`docs/app/vendor/leaflet`](docs/app/vendor/leaflet)), so the map does not wait on a CDN, and the web font loads without blocking the page.
+Earth Engine map-tile links expire after a few hours, so [`analysis/app_assets.py`](analysis/app_assets.py) exports everything the map shows as static files. The AI ran once, through Google Earth Engine's Python API; the map only reads the saved results, so it needs no server, no API key and no Earth Engine login. The one live API call is the optional photo check, through our Worker ([`serverless/photo-check`](serverless/photo-check/src/index.js)), which holds the key. Leaflet is served from the site itself ([`docs/app/vendor/leaflet`](docs/app/vendor/leaflet)), so the map does not wait on a CDN, and the web font loads without blocking the page.
 
 ## How it works
 
@@ -246,7 +250,9 @@ docs/            the GitHub Pages site
   app/             live map: index.html, app.js (page), core.js (logic), app.css
     sw.js          offline copy; manifest.webmanifest and icons/ for installing
     data/          exported images, patches.geojson, close-ups
+    final/         the final-round layout and features, one file each (on with ?final=1)
     vendor/        Leaflet 1.9.4 (BSD-2-Clause)
+serverless/photo-check/  the Cloudflare Worker that holds the Gemini key for the photo check
 tests/           consistency checks (Python) and map-logic tests (Node)
 .github/         the GitHub Actions workflow that runs them
 ```
@@ -272,7 +278,8 @@ Dynamic World accuracy figures: Brown, C.F. et al. (2022), *Dynamic World, near 
 
 - **The AI labels are not perfect.** Dynamic World's own validation gives 86.7% user's accuracy for built-up land but only 36.8% producer's accuracy for marsh (Brown et al. 2022, Tables 7–8). It misses a lot of marsh, so 28.1 ha is a cautious count, not the full loss.
 - **10 m squares are coarse.** Small dumping or a single building plot can be missed.
-- **Dry season only, plus one flood image.** Monsoon clouds hide the ground for months. The year-by-year view uses dry seasons; the flood view is a single image (26 Dec 2021) with about 17% of the area under cloud. Radar is the final-round fix, though the 2015 test above shows it needs more than a threshold over marsh.
+- **Dry season only, plus one flood image.** Monsoon clouds hide the ground for months. The year-by-year view uses dry seasons; the flood view is a single image (26 Dec 2021) with about 17% of the area under cloud. Radar is the planned fix and is not built yet; the 2015 test above shows it needs more than a threshold over marsh.
+- **The photo check is one AI reading of one photo.** It needs a connection, and Gemini can be wrong, so its answer also says it needs a ground check. NEERKATTI stores nothing, but on Google's free tier Google may use the photo to improve its AI, so the phone drops the GPS data first and the sheet asks people to leave faces out.
 - **Season labels flicker.** Some patches read as buildings for one season and marsh the next. The popup bars show this as it is; the "built over since" year only counts unbroken runs.
 - **The marsh outline is OpenStreetMap's**, volunteer-mapped, not the official Ramsar or Reserve Forest survey. Our patches were already built over by the 2025 dry season, before the Green Tribunal's order of September 2025.
 - **"Built" includes filling.** Two of the nine confirmed patches (#6 and #7) are earth and debris filling, which Dynamic World labels as built.
@@ -287,6 +294,7 @@ The [model and data card](docs/MODEL_CARD.md) puts the data, the AI, the results
 - We never name owners, builders, companies or buildings. Place names are area-level only: suburb, village or Corporation zone.
 - All data is public and free. The site has no analytics and sets no cookies. In your own browser it remembers that you closed the intro and keeps an offline copy of the map's files.
 - "Near me" uses your location only inside your browser to sort the list; it is never sent anywhere.
+- The photo check sends the photo, shrunk and without its GPS data, through our Worker to Google's Gemini. Your location goes only if you tap to add it, and only to measure the distance to the site. The Worker stores nothing.
 
 ## Roadmap
 
@@ -296,7 +304,8 @@ The [model and data card](docs/MODEL_CARD.md) puts the data, the AI, the results
 - [x] Round 2 upgrade: close-ups, zone or village names and AI confidence for all 36; sort, area chart, near me; offline and installable; CI
 - [x] Year by year: every dry season 2018–2026, the year each patch was built over, the protected marsh and its 1 km zone, the 2021 floods, Landsat's water history, open CSV
 - [x] Ask the AI about any spot, watch any patch season by season, a tour that plays itself, every season offline, extension points for the final
-- [ ] Final round (24 h, [plan](docs/FINAL_ROUND_PLAN.md)): new-change alerts (first inside the 1 km zone), citizen photo check, complaint PDF in Tamil and English, Sentinel-1 radar
+- [x] Final round (24 h, [plan](docs/FINAL_ROUND_PLAN.md)): new-change alerts (first inside the 1 km zone), complaint and RTI follow-up letters in Tamil and English, the citizen photo check (Gemini 2.5 Flash-Lite through our Cloudflare Worker), a phone-first layout with "How it works"
+- [ ] Sentinel-1 radar through monsoon clouds
 
 Named after the *neerkatti*, Tamil Nadu's traditional lake-keepers. Team Sternritters, DEXATHON 2026, Sathyabama Institute of Science and Technology, Chennai.
 
