@@ -4,3 +4,4 @@ __pycache__/
 .env
 deck/
 .edge-print/
+serverless/photo-check/.wrangler/
