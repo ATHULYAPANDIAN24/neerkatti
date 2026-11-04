@@ -79,6 +79,17 @@
   var head = about.querySelector('.m3-vhead');
   about.insertBefore(card, head ? head.nextSibling : about.firstChild);
 
+  // the demo video: loads nothing until it is played, and is not in the offline copy (sw.js)
+  var vid = document.createElement('section');
+  vid.className = 'm3-card nk-demo';
+  vid.setAttribute('aria-labelledby', 'nk-demo-h');
+  vid.innerHTML = '<h3 id="nk-demo-h">Watch the map in use</h3>' +
+    '<p class="small">A silent 46-second screen recording of the live map, made on 25 Oct 2026 with the Round 2 layout.</p>' +
+    '<video class="nk-demo-v" controls muted playsinline preload="none" poster="final/media/demo-poster.webp" width="1280" height="720">' +
+    '<source src="final/media/demo.mp4" type="video/mp4">' +
+    '<p class="small">This browser cannot play the video. <a href="final/media/demo.mp4">Download it (MP4)</a>.</p></video>';
+  card.parentNode.insertBefore(vid, card.nextSibling);
+
   // full screen, for a projector: the figure alone, as large as the screen allows
   var fig = card.querySelector('.nk-arch-fig'), full = card.querySelector('.nk-arch-full');
   if (!fig.requestFullscreen) full.hidden = true;

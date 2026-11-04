@@ -697,3 +697,4 @@ html.nk-m3 .nk-status{color:var(--md-primary)}
 .m3-next li b{color:var(--md-on-surface);font-weight:500}
 .m3-next-note{display:flex;gap:8px;align-items:flex-start;margin:12px 0 0!important}
 .m3-next-note .msr{--msr:18px;color:var(--md-on-surface-variant)}
+.nk-demo-v{display:block;width:100%;height:auto;aspect-ratio:16/9;margin-top:8px;border-radius:12px;background:var(--md-surface-container-highest)}
