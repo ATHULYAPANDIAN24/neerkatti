@@ -1,0 +1,151 @@
+NEERKATTI - 3-MINUTE SCRIPT
+Team Sternritters - DEXATHON 2026 final
+
+WHO DOES WHAT
+  DRIVER    holds the phone and taps. Says nothing.
+  CLOSER    opens and closes.
+  ARCHITECT explains the system and the numbers.
+  IMPACT    explains the risks and the letter.
+Words in [brackets] are what the Driver taps. Never read the brackets aloud.
+Speak slowly. Pause after every number.
+
+==================================================================
+
+0:00  CLOSER  - The problem
+[Overview screen]
+
+"Pallikaranai Marsh is one of Chennai's last big wetlands.
+It soaks up floodwater for south Chennai, and it is being filled in, piece by piece.
+
+NEERKATTI is an AI water-keeper. It reads free satellite images
+from every dry season since 2018 and shows where water and marsh became buildings:
+28.1 hectares, in 36 patches. Two-thirds of that happened since 2023."
+
+------------------------------------------------------------------
+
+0:30  CLOSER  - Understanding and prioritisation
+
+"From the mentors' feedback, we picked the two things that mattered most:
+make the architecture easy to see, and make every answer clear and checkable.
+We did those first. Then we checked every claim we make against our own data."
+
+------------------------------------------------------------------
+
+0:50  ARCHITECT  - High-priority improvement: the architecture
+[About -> How it works]
+
+"This is the whole system, on one screen.
+Google Earth Engine runs Google's Dynamic World AI over free Sentinel-2 satellite images.
+The AI labels every 10-metre square as water, marsh or buildings.
+Our rule flags squares that were water or marsh in 2018
+and are buildings in both 2025 and 2026.
+The results are saved as small files, so the phone needs
+no server, no database and no API key.
+It costs nothing to run, and it works offline."
+
+------------------------------------------------------------------
+
+1:25  ARCHITECT  - Measurable quality improvement
+[Year by year -> drag the slider -> tap patch 1]
+
+"What got better, in numbers.
+Every number on screen comes straight from the data file. None is typed in by hand.
+Our filters turned 26 raw detections into 5 alerts worth checking.
+Our own code is about 67 kilobytes compressed,
+and the demo video downloads nothing until you press play."
+
+------------------------------------------------------------------
+
+1:50  CLOSER  - Testing and validation
+
+"We test it three ways.
+62 automated tests run on every change.
+We checked the live site end to end.
+And we checked by eye: of the top 10 patches, 9 are real changes and 1 is unclear.
+We show the unclear one too."
+
+------------------------------------------------------------------
+
+2:10  IMPACT  - Weaknesses and risks
+[Act -> Write the letter -> tap the Tamil option]
+
+"Our weaknesses, and what we did about them.
+The AI misses some marsh, so 28.1 hectares is a minimum, not the full loss.
+10-metre squares can't see small dumping,
+so every patch says 'possible change, needs a ground check'.
+Our photo-check service used an AI model Google is retiring,
+so we moved it to a supported model before it could break.
+And the result is this: a complaint letter, in Tamil or English,
+asking the right authority to inspect."
+
+------------------------------------------------------------------
+
+2:40  CLOSER  - Ownership and justification
+[Alerts -> tap A3]
+
+"Every choice here has a reason.
+No server, so it is free and cannot crash.
+A proven AI model instead of our own, because there is no ground truth to train on.
+'Coming' labels instead of fake features.
+
+And this matters now: the High Court is due to hear the case
+on the marsh's protected zone on 11 November.
+This alert is 700 metres from this campus.
+
+What would you like us to show you in detail?"
+
+[STOP TALKING. Wait for their question.]
+
+==================================================================
+
+IF THEY GIVE YOU ONLY 1 MINUTE
+Read the 0:00 part, the 0:50 part, then the last 3 lines of the 2:40 part.
+
+==================================================================
+
+LIKELY QUESTIONS - answer in one sentence, then stop
+
+Which feedback did you act on?
+  "A clearer architecture and clearer answers. The diagram is in the app, and every claim is checked against the data."
+
+What was the most important change?
+  "Putting the architecture on screen, because everything else is explained from it."
+
+How do you know it improved?
+  "62 tests pass on every change, every number comes from the data, and we fixed two overclaims we found ourselves."
+
+What AI do you use?
+  "Google's Dynamic World. It labels every 10-metre square in Sentinel-2 images."
+
+How accurate is it?
+  "86.7% on buildings, 36.8% on marsh. It misses marsh, so our number is a minimum."
+
+Does the AI run on the phone?
+  "No. It ran once in Earth Engine. The phone reads the labels it saved."
+
+Why no server?
+  "Everything is worked out in advance, so it is free, fast, and has nothing to hack."
+
+What if a patch is wrong?
+  "Every patch says 'possible change, needs a ground check', and the letter asks an official to inspect."
+
+What is not built yet?
+  "The photo check and the radar layer. They are labelled 'Coming', not faked."
+
+Has anyone used it?
+  "Not yet."
+
+What would you do next?
+  "Deploy the photo check, then share it with resident groups around the marsh."
+
+Don't know an answer?
+  "I don't know. Here is what I do know: ..."   Never guess a number.
+
+==================================================================
+
+BEFORE YOU GO ON STAGE
+  - Read your part aloud 5 times tonight. Then say it without the paper.
+  - Time the whole script. If it runs over 3:00, cut words, not sentences.
+  - Open the live site twice on the demo phone, then try it in airplane mode.
+  - If airplane mode works, the Architect may add: "It even works with the network off."
+  - Live link: https://athulyapandian24.github.io/neerkatti/app/?final=1
