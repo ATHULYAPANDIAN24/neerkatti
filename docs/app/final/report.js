@@ -7,7 +7,7 @@
 (function () {
   var F = window.NKFinal;
   if (!F || !F.on) return;
-  var PHOTO_URL = '';   // the Worker address, e.g. https://neerkatti-photo-check.NAME.workers.dev
+  var PHOTO_URL = 'https://neerkatti-photo-check.neerkatti.workers.dev';   // the Worker address, e.g. https://neerkatti-photo-check.NAME.workers.dev
   if (!PHOTO_URL) return;
   var esc = F.esc;
 
@@ -123,4 +123,5 @@
     sheet.showModal();
     $('nk-photo-title').focus();
   };
+  F.live('photo');
 })();

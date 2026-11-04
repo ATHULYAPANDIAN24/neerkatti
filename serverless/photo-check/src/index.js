@@ -1,3 +1,4 @@
+import { DurableObject } from 'cloudflare:workers';
 // NEERKATTI photo check (final round, P1): one small Cloudflare Worker that holds the vision
 // model's API key, so the key is never in the website or this repository.
 //
@@ -54,11 +55,11 @@ function tooMany(visitor) {
 }
 
 async function askModel(env, photo) {
-  const model = env.GEMINI_MODEL || 'gemini-3.8-flash';
+  const model = env.GEMINI_MODEL || 'gemini-2.5-flash-lite';
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), 25_000);
   try {
-    const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`, {
+    const res = await relay(env, `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`, {
       method: 'POST',
       signal: controller.signal,
       headers: { 'Content-Type': 'application/json', 'x-goog-api-key': env.GEMINI_API_KEY },
@@ -101,11 +102,11 @@ export default {
 
     // Which models this key can use (names only), to pick GEMINI_MODEL; no photo involved
     if (request.method === 'GET' && url.pathname === '/models') {
-      const res = await fetch('https://generativelanguage.googleapis.com/v1beta/models?pageSize=200', { headers: { 'x-goog-api-key': env.GEMINI_API_KEY } });
+      const res = await relay(env, 'https://generativelanguage.googleapis.com/v1beta/models?pageSize=200', { headers: { 'x-goog-api-key': env.GEMINI_API_KEY } });
       if (!res.ok) return reply({ error: `Model list refused (${res.status}).` }, 502, cors);
       const data = await res.json();
       const names = (data.models || []).filter((m) => (m.supportedGenerationMethods || []).includes('generateContent')).map((m) => m.name.replace('models/', ''));
-      return reply({ models: names, using: env.GEMINI_MODEL || 'gemini-3.8-flash' }, 200, cors);
+      return reply({ models: names, using: env.GEMINI_MODEL || 'gemini-2.5-flash-lite' }, 200, cors);
     }
     if (request.method === 'GET' && url.pathname === '/') return reply({ service: 'NEERKATTI photo check', ok: !!env.GEMINI_API_KEY }, 200, cors);
     if (request.method !== 'POST' || url.pathname !== '/check') return reply({ error: 'Not found.' }, 404, cors);
@@ -119,10 +120,27 @@ export default {
     if (!photo || photo.length > MAX_PHOTO || !/^[A-Za-z0-9+/=]+$/.test(photo)) return reply({ error: 'Send one JPEG photo of up to about 1 MB.' }, 400, cors);
 
     const answer = await askModel(env, photo);
-    if (answer.error) return reply({ error: answer.error }, answer.status || 502, cors);
+    if (answer.error) return reply({ error: answer.error, detail: answer.detail }, answer.status || 502, cors);
     const here = isNumber(body.lat) && isNumber(body.lon);
     const site = body.site || {};
     answer.distance_m = here && isNumber(site.lat) && isNumber(site.lon) ? metres(body.lat, body.lon, site.lat, site.lon) : null;
     return reply(answer, 200, cors);
   }
 };
+
+// Gemini refuses some Cloudflare locations ("User location is not supported"), so the call to
+// Google is made from a Durable Object placed in eastern North America. It stores nothing.
+async function relay(env, url, init) {
+  if (!env.RELAY) return fetch(url, init);
+  const stub = env.RELAY.get(env.RELAY.idFromName('google-us'), { locationHint: 'enam' });
+  const headers = Object.fromEntries(new Headers((init && init.headers) || {}));
+  return stub.fetch('https://relay/', { method: 'POST', body: JSON.stringify({ url, method: (init && init.method) || 'GET', headers, body: init && init.body }) });
+}
+
+export class Relay extends DurableObject {
+  async fetch(request) {
+    const { url, method, headers, body } = await request.json();
+    const res = await fetch(url, { method, headers, body });
+    return new Response(await res.text(), { status: res.status, headers: { 'Content-Type': 'application/json' } });
+  }
+}

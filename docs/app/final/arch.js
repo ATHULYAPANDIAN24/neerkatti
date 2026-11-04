@@ -80,7 +80,7 @@
     '<li>' + icon('visibility') + '<span>A 10 m pixel cannot see one house; small dumping is missed.</span></li>' +
     (acc[1] ? '<li>' + icon('info') + '<span>Dynamic World is right about buildings ' + acc[1] + '% of the time but catches only ' + acc[2] +
       '% of marsh, so ' + ha + ' ha is a floor, not a ceiling.</span></li>' : '') +
-    '<li>' + icon('schedule') + '<span>The photo check and the radar layer are not built yet.</span></li></ul>';
+    '<li>' + icon('schedule') + '<span>The photo check is the one part that needs a connection: a small Cloudflare service holds the Gemini key and keeps nothing. The radar layer is not built yet.</span></li></ul>';
 
   var head = about.querySelector('.m3-vhead');
   about.insertBefore(card, head ? head.nextSibling : about.firstChild);
