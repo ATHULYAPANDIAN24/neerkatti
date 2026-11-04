@@ -60,12 +60,15 @@
   function show(a, dataUrl) {
     var where = a.distance_m === null || a.distance_m === undefined ? 'No location shared.'
       : 'Taken about ' + away(a.distance_m) + ' from the site.';
+    // what the AI saw can go into the complaint letter as one sentence (final/complaint.js)
+    var toLetter = F.letter && /^(construction|dumping|sewage)$/.test(a.category);
     $('nk-photo-out').innerHTML =
       '<figure class="nk-fig"><img src="' + dataUrl + '" alt="The photo you sent"></figure>' +
       '<p><b>' + esc(WORDS[a.category] || 'Unclear') + '</b> · the AI is ' + Math.round((a.confidence || 0) * 100) + '% sure</p>' +
       '<p>' + esc(a.reason || '') + '</p>' +
       '<p class="nk-note">' + esc(where) + ' Read by ' + esc(a.model || 'Gemini') + ', ' + esc(new Date().toLocaleString('en-IN')) +
-      '. Possible change, needs a ground check.</p>';
+      '. Possible change, needs a ground check.</p>' +
+      (toLetter ? '<p><button type="button" class="btn ghost" id="nk-photo-letter">Add it to a complaint letter</button></p>' : '');
   }
 
   // The Worker's own refusals are plain words; Google's (busy, over quota) come as status codes
@@ -102,6 +105,9 @@
     }).then(function (x) {
       if (mine !== ask) return;
       if (!x.ok || x.j.error) { say(plain(x.status, x.j.error)); return; }
+      // kept in this page's memory only, for the letter; gone on reload
+      F.photos = F.photos || {};
+      F.photos[site.kind + ':' + site.id] = { category: x.j.category, when: new Date() };
       show(x.j, dataUrl);
       say('Answer below: ' + (WORDS[x.j.category] || 'Unclear') + '.');
     }).catch(function (e) {
@@ -129,6 +135,12 @@
   });
   $('nk-photo-x').addEventListener('click', function () { sheet.close(); });
   sheet.addEventListener('close', stop);
+  $('nk-photo-out').addEventListener('click', function (e) {
+    if (!e.target.closest('#nk-photo-letter')) return;
+    var s = site;
+    sheet.close();
+    F.letter(s, 'complaint');
+  });
   sheet.addEventListener('click', function (e) {
     if (e.target !== sheet) return;
     var r = sheet.getBoundingClientRect();

@@ -114,12 +114,30 @@
   };
   function tx(lang) { return form.kind === 'rti' ? Object.assign({}, T[lang], R[lang]) : T[lang]; }
 
+  // The citizen's own photo check of this site on this visit (final/report.js keeps it in memory
+  // only, in F.photos): one sentence in the complaint, only when the AI saw one of these three
+  var PHOTO = {
+    en: { construction: 'construction', dumping: 'dumping or filling', sewage: 'sewage' },
+    ta: { construction: 'கட்டுமானப் பணிக்கான', dumping: 'மண் அல்லது கழிவுகளைக் கொட்டி நிரப்பியதற்கான', sewage: 'கழிவுநீருக்கான' }
+  };
+  function photoOf(s) {
+    var p = F.photos && F.photos[s.kind + ':' + s.id];
+    return p && PHOTO.en[p.category] ? p : null;
+  }
+  function photoLine(p, lang) {
+    if (lang === 'ta') return day(p.when, 'ta') + ' அன்று, இந்த இடத்தில் நான் எடுத்த புகைப்படத்தை NEERKATTI வழியாக Google-இன் Gemini AI சோதித்து, அதில் ' +
+      PHOTO.ta[p.category] + ' அறிகுறிகள் தெரிவதாகக் கூறியது; இதைக் கள ஆய்வு மட்டுமே உறுதிப்படுத்த முடியும்.';
+    return 'On ' + day(p.when, 'en') + ', Google\'s Gemini AI, through NEERKATTI, checked a photo I took at this site and said it shows signs of ' +
+      PHOTO.en[p.category] + '; only an inspection can confirm this.';
+  }
+
   function body(s, lang) {
     if (form.kind === 'rti') return R[lang].paras(s);
-    var t = T[lang];
+    var t = T[lang], p = form.photo ? photoOf(s) : null;
     var out = [t.ask(s), t.seen(s), t.marsh(s)];
     if (s.wet_monsoon !== null && s.wet_monsoon !== undefined) out.push(t.flood(s));
     if (s.checked) out.push(t.checked);
+    if (p) out.push(photoLine(p, lang));
     out.push(t.caveat, t.request);
     return out;
   }
@@ -161,7 +179,7 @@
   // ---- the sheet ------------------------------------------------------------------
   var saved = {};
   try { saved = JSON.parse(F.store('neerkatti-letter-me') || '{}') || {}; } catch (e) { saved = {}; }
-  var form = { kind: 'complaint', lang: 'both', to: 'wetland', other: '', name: saved.name || '', addr: saved.addr || '', contact: saved.contact || '' };
+  var form = { kind: 'complaint', lang: 'both', to: 'wetland', other: '', name: saved.name || '', addr: saved.addr || '', contact: saved.contact || '', photo: true };
   var site = null;
 
   var sheet = document.createElement('dialog');
@@ -177,6 +195,7 @@
     '<label><input type="radio" name="nk-kind" value="complaint" checked><span>Complaint</span></label>' +
     '<label><input type="radio" name="nk-kind" value="rti"><span>RTI follow-up</span></label></fieldset></div>' +
     '<p class="nk-note" id="nk-rti-note" hidden>Send this if your complaint gets no action in 30 days. Under the RTI Act 2005 the office must reply within 30 days. The fee in Tamil Nadu is ₹10.</p>' +
+    '<label class="nk-field nk-check" id="nk-photo-wrap" hidden><input type="checkbox" id="nk-photo-on" checked><span id="nk-photo-lbl"></span></label>' +
     '<div class="nk-field"><span class="nk-flbl" id="nk-lang-lbl">Language</span><fieldset class="seg" aria-labelledby="nk-lang-lbl">' +
     '<label><input type="radio" name="nk-lang" value="en"><span>English</span></label>' +
     '<label><input type="radio" name="nk-lang" value="ta"><span lang="ta">தமிழ்</span></label>' +
@@ -212,6 +231,9 @@
     var ls = langs();
     $('nk-letter-title').textContent = form.kind === 'rti' ? 'RTI follow-up letter' : 'Complaint letter';
     $('nk-rti-note').hidden = form.kind !== 'rti';
+    var p = photoOf(site);
+    $('nk-photo-wrap').hidden = form.kind === 'rti' || !p;
+    if (p) $('nk-photo-lbl').textContent = 'Mention my photo check of ' + day(p.when, 'en') + ': signs of ' + PHOTO.en[p.category];
     $('nk-preview').innerHTML = ls.map(function (l) { return pageHtml(site, l); }).join('');
     var text = ls.map(function (l) { return plainText(site, l); }).join('\n\n----------\n\n');
     $('nk-mail').href = 'mailto:?subject=' + encodeURIComponent(tx(ls[0]).subj(site)) + '&body=' + encodeURIComponent(text);
@@ -225,6 +247,7 @@
     $('nk-name').value = form.name;
     $('nk-addr').value = form.addr;
     $('nk-contact').value = form.contact;
+    $('nk-photo-on').checked = form.photo;
   }
 
   sheet.addEventListener('input', function (e) {
@@ -236,6 +259,7 @@
     else if (el.id === 'nk-name') form.name = el.value.trim();
     else if (el.id === 'nk-addr') form.addr = el.value.trim();
     else if (el.id === 'nk-contact') form.contact = el.value.trim();
+    else if (el.id === 'nk-photo-on') form.photo = el.checked;
     if (/^nk-(name|addr|contact)$/.test(el.id)) remember();
     render();
   });
@@ -272,8 +296,11 @@
     statusTimer = setTimeout(function () { $('nk-status').textContent = ''; }, 4000);
   }
 
-  function open(s) {
+  // kind: 'complaint' or 'rti' to choose the letter (the photo check asks for the complaint)
+  function open(s, kind) {
     site = s;
+    if (kind) form.kind = kind;
+    form.photo = true;
     if (form.to === 'wetland' && s.marsh === 'outside' && /zone$/.test(s.place)) form.to = 'gcc';
     F.font('https://fonts.googleapis.com/css2?family=Noto+Sans+Tamil:wght@400;600;700&display=swap');
     $('nk-letter-sub').textContent = (s.kind === 'alert' ? 'Alert ' + s.id : 'Patch #' + s.id) + ' · ' + s.place + ' · ' + s.area_ha.toFixed(2) + ' ha';

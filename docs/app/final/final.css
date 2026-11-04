@@ -111,3 +111,8 @@
   #nk-print .nk-page + .nk-page{break-before:page}
   #nk-print .nk-subj{-webkit-print-color-adjust:exact;print-color-adjust:exact}
 }
+
+/* the letter: a checkbox row, such as "Mention my photo check" */
+.nk-form label.nk-check{flex-direction:row;align-items:center;gap:12px;min-height:48px;cursor:pointer;font-size:14px;line-height:1.4}
+.nk-form label.nk-check input[type="checkbox"]{flex:none;width:20px;height:20px;min-height:0;margin:0;padding:0;border:0;accent-color:var(--md-primary,#006A69)}
+.nk-form label.nk-check input[type="checkbox"]:focus-visible{outline:3px solid var(--md-primary,#006A69);outline-offset:2px}
