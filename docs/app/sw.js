@@ -2,7 +2,7 @@
 // opened, so it still works with no connection (a venue with poor Wi-Fi, say).
 // Online, every request still goes to the network first, so a new version shows
 // at once; the saved copy is only the fallback. tests/ checks the list below.
-var VERSION = 'neerkatti-r2-5';
+var VERSION = 'neerkatti-f-1';
 var SHELL = VERSION + '-shell';
 var TILES = VERSION + '-tiles';
 var MAX_TILES = 400;
@@ -12,7 +12,9 @@ var PRECACHE = [
   'data/neerkatti_data.js', 'data/patches.geojson', 'data/marsh_boundary.geojson',
   'data/photo_2018_light.webp', 'data/photo_2026_light.webp',
   'data/photo_2018.webp', 'data/photo_2026.webp', 'data/labels_2018.webp', 'data/labels_2026.webp',
-  'icons/icon-192.png'
+  'icons/icon-192.png',
+  // the files of the final round (on with ?final=1), so its layout opens offline too
+  'final/final.css', 'final/ui.css', 'final/common.js', 'final/complaint.js', 'final/alerts.js', 'final/impact.js', 'final/ui.js'
 ];
 // Every season's light photo and AI labels, so the year player also works offline.
 // Saved after the files above, and a missing one does not stop the offline copy.
