@@ -1455,7 +1455,7 @@
     {
       title: 'Watch it year by year',
       text: 'Every dry season from 2018 to 2026 plays in turn. A dashed patch is still water or marsh that season; it fills red from the year it was built over. ' +
-        Math.round(recentHa / meta.lost_ha * 100) + '% of the 28.1 ha went in the last three seasons.',
+        Math.round(recentHa / meta.lost_ha * 100) + '% of the ' + meta.lost_ha.toFixed(1) + ' ha went in the last three seasons.',
       short: 'Every dry season, 2018 to 2026. Dashed patches fill red from the year they were built over. ' +
         Math.round(recentHa / meta.lost_ha * 100) + '% of it went in the last three seasons.',
       run: function () { stopSweep(); fresh(); setView('photo'); state.year = FIRST; setMode('single'); setTimeout(function () { if (tourStep === 1) setPlaying(true); }, calm.matches ? 0 : 700); }
