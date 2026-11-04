@@ -305,6 +305,11 @@ final version."
   a secret, answers only our site, stores nothing and allows 8 checks a minute per visitor. It calls
   Gemini 2.5 Flash-Lite from a Durable Object in eastern North America, because Gemini refused
   Cloudflare's Singapore location. Offline, the app says the check needs a connection.
+- **Photo to letter (commit `f9a90f1`; live only once that commit is pushed):** after a check
+  that sees construction, dumping or sewage, *Add it to a complaint letter* opens the complaint
+  with one dated sentence about the photo, in English and Tamil; *Mention my photo check* leaves
+  it out. Never in the RTI letter. Its Tamil needs a Tamil speaker's check before the push.
+  Check that it is live before you mention it to judges.
 - **Coming:** radar through monsoon clouds.
 
 ---
