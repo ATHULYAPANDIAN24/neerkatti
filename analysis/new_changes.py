@@ -3,8 +3,12 @@
 A square raises an alert when the AI labels it water or marsh in the 2026 dry season
 (Feb–May, the same summary the map shows, off the outer ~20 m rim of each water body),
 and buildings or bare earth in at least two clear Sentinel-2 images taken since then,
-and in at least half of the clear looks it got. Groups of fewer than 10 squares (~0.1 ha)
-are dropped, as in the v1 rule.
+and in at least half of the clear looks it got. Squares that were bare earth or buildings
+in the same months last year (June to September 2025) are left out, because a lake edge
+that dries out every summer is a season, not a change; so are squares already built in
+the 2025 dry season, and squares within 30 m of open water the AI still sees since June
+(filling takes the water away; a shrinking shore keeps water next door). Groups of fewer
+than 10 squares (~0.1 ha) are dropped, as in the v1 rule.
 
 "Clear" is judged over the study area itself, not by the tile's own cloud score (the
 README tells why): Google's Cloud Score+ marks each square clear or not, and a day counts
@@ -54,8 +58,10 @@ MAX_ALERTS = 40
 MAX_CLOSEUPS = 24
 STATUS = "possible change, needs a ground check"
 RULE = ("water or marsh in the 2026 dry season (off the 20 m rim), buildings or bare earth "
-        "in at least two clear images since June 2026 and in at least half of its clear looks; "
-        "groups of 10 or more squares")
+        "in at least two clear images since June 2026 and in at least half of its clear looks, "
+        "but not bare or built in the same months of 2025 (so a lake drying in summer is not an alert), "
+        "not built in the 2025 dry season, and not within 30 m of open water still seen since June "
+        "(a moving shoreline); groups of 10 or more squares")
 
 
 def fetch(url, tries=3):
@@ -116,6 +122,7 @@ print(f"clear days (>= {threshold:.0%} of the area):", kept)
 jan1 = dt.date(2026, 1, 1)
 seen = ee.Image(0)
 looks = ee.Image(0)
+water = ee.Image(0)
 first = ee.Image(9999)
 last = ee.Image(0)
 for d in kept:
@@ -124,9 +131,30 @@ for d in kept:
     built = labels.eq(6).Or(labels.eq(7)).unmask(0).And(wet26)
     seen = seen.add(built)
     looks = looks.add(labels.gte(0).unmask(0).And(wet26))
+    water = water.add(labels.eq(0).unmask(0))
     first = first.min(ee.Image.constant(n).updateMask(built).unmask(9999))
     last = last.max(ee.Image.constant(n).updateMask(built).unmask(0))
-flag = clean(seen.gte(2).And(seen.multiply(2).gte(looks)).And(wet26))
+# Seasons are not changes: a square that the AI labels bare earth or buildings in the same
+# months last year (June to September 2025, clear looks only) dries out or flickers every
+# year, like a lake edge in summer; one already built in the 2025 dry season is an old change.
+LAST_YEAR = ("2025-06-01", "2025-10-01")
+
+
+def clear_labels(start, stop):
+    col = dw.filterDate(start, stop).linkCollection(csp, ["cs_cdf"])
+    return col.map(lambda img: img.select("label").updateMask(img.select("cs_cdf").gte(CLEAR_SCORE)))
+
+
+last_year = clear_labels(*LAST_YEAR).reduce(ee.Reducer.mode()).rename("label").clip(AREA)
+seasonal = last_year.eq(6).Or(last_year.eq(7)).unmask(0)
+cover25 = dw.filterDate("2025-02-01", "2025-06-01").select("label").reduce(ee.Reducer.mode()).clip(AREA)
+old = cover25.eq(6).unmask(0)
+# Filling takes the water away; a shrinking shore keeps water next door. A square within
+# 30 m of open water that the AI still sees in at least two clear looks since June is a
+# shoreline moving, not an alert.
+near_water = water.gte(2).focalMax(radius=30, units="meters")
+flag = clean(seen.gte(2).And(seen.multiply(2).gte(looks)).And(wet26).And(seasonal.Not()).And(old.Not())
+             .And(near_water.Not()))
 
 # 4. Groups of flagged squares become alerts, with what the reader needs to judge each one
 marsh_geo = json.loads((DATA / "marsh_boundary.geojson").read_text(encoding="utf-8"))
@@ -188,6 +216,14 @@ def nearest_area(lon, lat):
     best = min(patches, key=lambda f: (f["properties"]["lon"] - lon) ** 2 + (f["properties"]["lat"] - lat) ** 2)
     return best["properties"].get("admin_area")
 
+
+# Notes from checking the close-ups by eye (outputs/alerts_check.json), keyed by the centre
+CHECKS = ROOT / "outputs" / "alerts_check.json"
+checks = json.loads(CHECKS.read_text(encoding="utf-8")) if CHECKS.exists() else {}
+for a in alerts:
+    note = checks.get(f"{a['lat']:.5f},{a['lon']:.5f}")
+    if note:
+        a["checked_by_eye"] = note
 
 cache = load_cache()
 online = os.environ.get("NO_NOMINATIM") != "1"

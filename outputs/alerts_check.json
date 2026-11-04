@@ -1,0 +1,8 @@
+{
+  "_about": "By-eye notes on the alerts from analysis/new_changes.py, from the close-ups (2026 dry season | latest clear image). Keyed by the alert's centre, so they survive a re-run that renumbers the alerts. A visual check of satellite images, not a ground survey. Checked 4 Nov 2026.",
+  "12.89910,80.22592": "Unclear on the close-up: dark marsh before, green plants now; no filling is visible",
+  "12.90330,80.24188": "Water gone: the flooded plot is bare earth in the latest image",
+  "12.86704,80.22331": "Water gone: the pond is bare earth in the latest image",
+  "12.86465,80.22335": "Unclear on the close-up: looks like plants growing back, not filling",
+  "12.86761,80.21255": "Likely change: green, wet ground before, bare earth now"
+}

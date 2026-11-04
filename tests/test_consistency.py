@@ -103,6 +103,25 @@ class Data(unittest.TestCase):
             for lon, lat in points(f["geometry"]["coordinates"]):
                 self.assertTrue(BOX[0] <= lon <= BOX[2] and BOX[1] <= lat <= BOX[3], f["properties"]["rank"])
 
+    def test_alerts_follow_the_rule(self):
+        # final round (analysis/new_changes.py): every alert is a possible change inside the study
+        # area, seen in at least two clear looks and half of them, with its close-up on disk and
+        # the same list in the RSS feed
+        path = ROOT / "docs" / "app" / "data" / "alerts.json"
+        if not path.exists():
+            self.skipTest("no alert list yet")
+        alerts = json.loads(path.read_text(encoding="utf-8"))["alerts"]
+        self.assertEqual([a["id"] for a in alerts], [f"A{i}" for i in range(1, len(alerts) + 1)])
+        for a in alerts:
+            self.assertEqual(a["status"], STATUS, a["id"])
+            self.assertIn(a["marsh"], ("inside", "zone", "outside"), a["id"])
+            self.assertTrue(BOX[0] <= a["lon"] <= BOX[2] and BOX[1] <= a["lat"] <= BOX[3], a["id"])
+            self.assertGreaterEqual(a["times_seen"], 2, a["id"])
+            self.assertGreaterEqual(2 * a["times_seen"], a["clear_looks"], a["id"])
+            if "closeup" in a:
+                self.assertTrue((ROOT / "docs" / "app" / a["closeup"]).exists(), a["closeup"])
+        self.assertEqual(read("docs/app/data/alerts.xml").count("<item>"), len(alerts))
+
     def test_suburb_level_names_only(self):
         # map labels, the Round 1 names, and the suburbs OpenStreetMap returned (outputs/places.json)
         osm = {re.sub(r"^Zone \d+ ", "", n) for n in json.loads(read("outputs/places.json")).values() if n}
