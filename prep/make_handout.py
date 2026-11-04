@@ -49,7 +49,7 @@ ul{{margin:0;padding-left:4.5mm}} li{{margin:0 0 1.2mm}}
 .nk-a-t{{font-size:14px;font-weight:600;fill:var(--md-on-surface)}} .nk-a-s{{font-size:12px;fill:var(--md-on-surface-variant)}}
 .nk-a-who{{font-size:11px;fill:var(--md-on-surface-variant)}}
 .nk-a-node.ours text{{fill:var(--md-on-primary-container)}}
-.nk-a-arrow{{stroke:var(--md-outline);stroke-width:1.5}} .nk-a-head{{fill:var(--md-outline)}}
+.nk-a-arrow{{stroke:var(--md-outline);stroke-width:1.5}} .nk-a-arrow.net{{stroke-dasharray:4 3}} .nk-a-head{{fill:var(--md-outline)}}
 .nk-a-cut{{stroke:var(--md-primary);stroke-width:1.5;stroke-dasharray:5 4}}
 .nk-a-band{{font-size:10.5px;font-weight:600;letter-spacing:.8px;fill:var(--md-primary)}}
 #src,.nk-arch>:not(.nk-arch-fig),.nk-demo{{display:none}}
@@ -67,17 +67,20 @@ ul{{margin:0;padding-left:4.5mm}} li{{margin:0 0 1.2mm}}
     <h2>What it does</h2>
     <p>Finds where Pallikaranai's marsh and water became buildings, season by season since <span id="y0"></span>,
     from free Sentinel-2 images and Google's Dynamic World AI. Flags fresh filling as alerts, and writes a complaint
-    letter in English or Tamil to the office that can act.</p>
+    letter in English or Tamil to the office that can act, then an RTI follow-up if it is ignored. A citizen's photo
+    from the site can be checked by Gemini 2.5 Flash-Lite.</p>
     <h2>Who the letter goes to</h2>
     <ul><li>Tamil Nadu State Wetland Authority</li><li>Greater Chennai Corporation</li><li>Tamil Nadu Forest Department</li></ul>
     <h2>Why it costs ₹0</h2>
-    <p>The heavy analysis runs once in Google Earth Engine and is saved as plain files. The site is HTML, CSS and
-    JavaScript: no server, no database, no API key. It works offline after one visit.</p>
+    <p>The AI ran once, through Google Earth Engine's Python API. The website only reads the saved results: HTML, CSS
+    and JavaScript, no server, no database. It works offline after one visit. The one live API call is the optional
+    photo check, through our Worker, which holds the key.</p>
     <h2>Limits, said plainly</h2>
     <ul><li>A 10 m pixel cannot see one house; small dumping is missed.</li>
     <li id="acc"></li>
     <li>Every patch is a possible change that needs a ground check. NEERKATTI never names an owner.</li>
-    <li>The photo check and the radar layer are not built yet.</li></ul>
+    <li>The photo check needs a connection, and one photo read by an AI is not proof.</li>
+    <li>The radar layer is not built yet.</li></ul>
     <div class="qr">{qr}<div><b>Try it live</b><br><span class="url">{URL.replace("https://", "")}</span><br>Open on any phone. No sign-in.</div></div>
   </div>
 </div>

@@ -264,7 +264,7 @@
     <details class="about">
       <summary>Cost and data</summary>
       <ul>
-        <li><b>₹0 data cost:</b> free Sentinel-2 images and Dynamic World labels, Google Earth Engine (non-commercial), hosted free on GitHub Pages. No server and no API keys.</li>
+        <li><b>₹0 data cost:</b> free Sentinel-2 images and Dynamic World labels, Google Earth Engine (non-commercial), hosted free on GitHub Pages. The map needs no server and no API key. The one live API call is the optional photo check, through our Cloudflare Worker, which holds the Gemini key.</li>
         <li data-meta="photos">Sentinel-2 photos: median of the clear Feb–May images of each year.</li>
         <li>Study area: 80.17–80.26°E, 12.86–12.99°N. Made by <code>analysis/app_assets.py</code>, <code>year_by_year.py</code> and <code>context_layers.py</code>.</li>
         <li><a href="data/patches.csv" download="neerkatti_patches.csv">Download all 36 patches as a spreadsheet (CSV)</a> or <a href="data/patches.geojson" download="neerkatti_patches.geojson">as map outlines (GeoJSON)</a>: zone or village, AI confidence, year built over, marsh distance, every season's shares.</li>

@@ -680,6 +680,7 @@ html.nk-m3 .nk-status{color:var(--md-primary)}
 .nk-a-who{font-size:11px;fill:var(--md-on-surface-variant)}
 .nk-a-node.ours .nk-a-t,.nk-a-node.ours .nk-a-s,.nk-a-node.ours .nk-a-who{fill:var(--md-on-primary-container)}
 .nk-a-arrow{stroke:var(--md-outline);stroke-width:1.5}
+.nk-a-arrow.net{stroke-dasharray:4 3}
 .nk-a-head{fill:var(--md-outline)}
 .nk-a-cut{stroke:var(--md-primary);stroke-width:1.5;stroke-dasharray:5 4}
 .nk-a-band{font-size:10.5px;font-weight:600;letter-spacing:.8px;fill:var(--md-primary)}

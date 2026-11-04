@@ -15,50 +15,66 @@
 
   function icon(name) { return '<span class="msr" aria-hidden="true">' + name + '</span>'; }
 
-  // the diagram: boxes top to bottom, a dashed line where the work moves from the cloud to the phone
-  var W = 320, X = 8, BW = 304;
+  // the diagram: boxes top to bottom, a dashed line where the work moves from the cloud to the phone,
+  // and a second one above the only online part, the photo check. Its arrow runs from the phone down
+  // the right edge, past the letter (which needs no connection), with a head at each end: the photo
+  // goes out and the answer comes back.
+  var W = 320, X = 8, BW = 304, LANE = 44;
   var nodes = [
     { t: 'Sentinel-2 satellite', s: ['free · 10 m pixels · every 5 days'], who: 'ESA · free' },
     { t: 'Dynamic World AI', s: ['labels each 10 m square: water, marsh, built'], who: 'Google · free' },
     { t: 'Google Earth Engine', s: [years + ' years of dry-season (' + meta.season + ') composites'], who: 'Google · free' },
     { t: 'Our rule', s: ['marsh or water → built', 'rejects seasonal, shadow, shoreline noise'], who: 'ours', ours: 1 },
     { t: 'Static files', s: ['WebP label images + JSON · ' + n + ' patches · ' + ha + ' ha'], who: 'ours', ours: 1, cut: 1 },
-    { t: 'Your phone', s: ['plain JS + Leaflet · offline after one visit'], who: 'ours', ours: 1 },
-    { t: 'Complaint letter', s: ['English or Tamil, to the office that can act'], who: 'ours', ours: 1 }
+    { t: 'Your phone', s: ['plain JS + Leaflet · offline after one visit'], who: 'ours', ours: 1, phone: 1 },
+    { t: 'Complaint letter', s: ['then an RTI follow-up if ignored', 'English or Tamil · works offline'], who: 'ours', ours: 1, lane: 1 },
+    { t: 'Cloudflare Worker', s: ['holds the Gemini key as a secret', 'stores nothing'], who: 'ours', ours: 1, net: 1 },
+    { t: 'Gemini 2.5 Flash-Lite', s: ['says what one photo shows: construction,', 'dumping, sewage, no change or unclear'], who: 'Google · free', net: 2, join: ' ' }
   ];
-  var y = 22, parts = [], prevBottom = null, cutY = null;
+  var y = 22, parts = [], prevBottom = null, cutY = null, phoneBottom = null;
+  function cut(label) {
+    y += 14;
+    parts.push('<line class="nk-a-cut" x1="0" x2="' + W + '" y1="' + (y - 8) + '" y2="' + (y - 8) + '"/>' +
+      '<text class="nk-a-band" x="' + X + '" y="' + (y + 8) + '">' + label + '</text>');
+    cutY = y - 8;
+    y += 30;
+  }
+  function line(x, y1, y2, cls) { return '<line class="nk-a-arrow' + (cls || '') + '" x1="' + x + '" x2="' + x + '" y1="' + y1 + '" y2="' + y2 + '"/>'; }
+  function headDown(x, tip) { return '<path class="nk-a-head" d="M' + (x - 5) + ' ' + (tip - 7) + 'h10l-5 7z"/>'; }
+  function headUp(x, tip) { return '<path class="nk-a-head" d="M' + (x - 5) + ' ' + (tip + 7) + 'h10l-5 -7z"/>'; }
+  // a dashed link with a head at each end, for the online calls
+  function both(x, top, bottom) { return line(x, top + 7, bottom - 7, ' net') + headUp(x, top) + headDown(x, bottom); }
   parts.push('<text class="nk-a-band" x="' + X + '" y="14">ONCE, IN THE CLOUD</text>');
   nodes.forEach(function (d) {
-    if (d.cut) {
-      y += 14;
-      parts.push('<line class="nk-a-cut" x1="0" x2="' + W + '" y1="' + (y - 8) + '" y2="' + (y - 8) + '"/>' +
-        '<text class="nk-a-band" x="' + X + '" y="' + (y + 8) + '">ON THE PHONE · NO SERVER · NO API KEY</text>');
-      cutY = y - 8;
-      y += 30;
-    }
-    var h = 32 + 16 * d.s.length;
-    if (prevBottom != null) {
-      var mx = W / 2;
+    if (d.cut) cut('ON THE PHONE · NO SERVER · NO API KEY');
+    if (d.net === 1) cut('ONLINE · ONLY THE PHOTO CHECK');
+    var bw = d.lane ? BW - LANE : BW, h = 32 + 16 * d.s.length, mx = X + bw / 2;
+    if (d.net === 1) parts.push(both(X + BW - LANE / 2, phoneBottom + 1, y - 1));
+    else if (d.net === 2) parts.push(both(mx, prevBottom + 1, y - 1));
+    else if (prevBottom != null) {
       // across the cut, the arrow stops at the line and starts again under its label
-      if (cutY != null && d.cut) {
-        parts.push('<line class="nk-a-arrow" x1="' + mx + '" x2="' + mx + '" y1="' + (prevBottom + 2) + '" y2="' + (cutY - 3) + '"/>');
+      if (d.cut) {
+        parts.push(line(mx, prevBottom + 2, cutY - 3));
         prevBottom = cutY + 18;
       }
-      parts.push('<line class="nk-a-arrow" x1="' + mx + '" x2="' + mx + '" y1="' + (prevBottom + 2) + '" y2="' + (y - 7) + '"/>' +
-        '<path class="nk-a-head" d="M' + (mx - 5) + ' ' + (y - 8) + 'h10l-5 7z"/>');
+      parts.push(line(mx, prevBottom + 2, y - 7) + headDown(mx, y - 1));
     }
-    parts.push('<g class="nk-a-node' + (d.ours ? ' ours' : '') + '"><rect x="' + X + '" y="' + y + '" width="' + BW + '" height="' + h + '" rx="12"/>' +
+    parts.push('<g class="nk-a-node' + (d.ours ? ' ours' : '') + '"><rect x="' + X + '" y="' + y + '" width="' + bw + '" height="' + h + '" rx="12"/>' +
       '<text class="nk-a-t" x="' + (X + 12) + '" y="' + (y + 21) + '">' + esc(d.t) + '</text>' +
-      '<text class="nk-a-who" x="' + (X + BW - 12) + '" y="' + (y + 20) + '" text-anchor="end">' + esc(d.who) + '</text>' +
+      '<text class="nk-a-who" x="' + (X + bw - 12) + '" y="' + (y + 20) + '" text-anchor="end">' + esc(d.who) + '</text>' +
       d.s.map(function (s, i) { return '<text class="nk-a-s" x="' + (X + 12) + '" y="' + (y + 40 + 16 * i) + '">' + esc(s) + '</text>'; }).join('') +
       '</g>');
     prevBottom = y + h;
-    y += h + 22;
+    if (d.phone) phoneBottom = prevBottom;
+    y += h + (d.net === 1 ? 30 : 22);
   });
   var H = prevBottom + 4;
-  var desc = nodes.map(function (d) { return d.t + ': ' + d.s.join(', '); }).join('. Then ') + '.';
+  function says(d) { return d.t + ' (' + d.s.join(d.join || ', ') + ')'; }
+  var desc = nodes.filter(function (d) { return !d.net; }).map(function (d) { return d.t + ': ' + d.s.join(', '); }).join('. Then ') +
+    '. Online, only for the photo check: the phone sends one photo to ' +
+    nodes.filter(function (d) { return d.net; }).map(says).join(', which asks ') + ', and the answer comes back to the phone.';
   var svg = '<svg class="nk-arch-svg" viewBox="0 0 ' + W + ' ' + H + '" role="img" aria-labelledby="nk-arch-t nk-arch-d">' +
-    '<title id="nk-arch-t">How NEERKATTI works, from satellite to complaint letter</title><desc id="nk-arch-d">' + esc(desc) + '</desc>' +
+    '<title id="nk-arch-t">How NEERKATTI works, from satellite to complaint letter, and the online photo check</title><desc id="nk-arch-d">' + esc(desc) + '</desc>' +
     parts.join('') + '</svg>';
 
   var card = document.createElement('section');
@@ -67,20 +83,24 @@
   card.innerHTML =
     '<div class="nk-arch-head"><h3 id="nk-arch-h">How it works</h3>' +
     '<button type="button" class="m3-btn text nk-arch-full">' + icon('zoom_out_map') + 'Full screen</button></div>' +
-    '<p class="small">The heavy analysis runs once in Google Earth Engine and is saved as plain files. The site is only HTML, CSS and JavaScript: ' +
-    'no server, no database, no API key, ₹0 to run.</p>' +
+    '<p class="small">The AI ran once, through Google Earth Engine\'s Python API, and its results are saved as plain files. ' +
+    'The website only reads them: HTML, CSS and JavaScript, with no server and no database, ₹0 to run. ' +
+    'The one live API call is the optional photo check, through our Worker, which holds the key.</p>' +
     '<figure class="nk-arch-fig">' + svg +
     '<figcaption class="nk-arch-key"><span class="k ours"></span>built by us <span class="k"></span>free data and tools</figcaption></figure>' +
     '<h4 class="nk-arch-sub">Why each part</h4><ul class="m3-bullets">' +
     '<li>' + icon('auto_awesome') + '<span><b>Dynamic World.</b> Already validated by Google and WRI, so we do not train a model with no ground truth.</span></li>' +
     '<li>' + icon('satellite_alt') + '<span><b>Sentinel-2.</b> Free and every 5 days; 10 m is the finest free optical image.</span></li>' +
     '<li>' + icon('cloud_off') + '<span><b>No server.</b> Nothing to run, nothing to hack, ₹0.</span></li>' +
-    '<li>' + icon('map') + '<span><b>Leaflet.</b> About 42 KB compressed, so it runs on a cheap phone.</span></li></ul>' +
+    '<li>' + icon('map') + '<span><b>Leaflet.</b> About 42 KB compressed, so it runs on a cheap phone.</span></li>' +
+    '<li>' + icon('link') + '<span><b>A Cloudflare Worker.</b> The photo check goes through it, so the Gemini key stays a secret there and never reaches the site. It stores nothing.</span></li>' +
+    '<li>' + icon('photo_camera') + '<span><b>Gemini 2.5 Flash-Lite.</b> Reads a photo in seconds, and Google has announced no shutdown date for it. It only suggests; a ground check decides.</span></li></ul>' +
     '<h4 class="nk-arch-sub">Limits</h4><ul class="m3-bullets nk-arch-lim">' +
     '<li>' + icon('visibility') + '<span>A 10 m pixel cannot see one house; small dumping is missed.</span></li>' +
     (acc[1] ? '<li>' + icon('info') + '<span>Dynamic World is right about buildings ' + acc[1] + '% of the time but catches only ' + acc[2] +
       '% of marsh, so ' + ha + ' ha is a floor, not a ceiling.</span></li>' : '') +
-    '<li>' + icon('schedule') + '<span>The photo check is the one part that needs a connection: a small Cloudflare service holds the Gemini key and keeps nothing. The radar layer is not built yet.</span></li></ul>';
+    '<li>' + icon('photo_camera') + '<span>The photo check needs a connection, and one photo read by an AI is not proof. On Google\'s free tier, Google may keep the photo to improve its AI.</span></li>' +
+    '<li>' + icon('schedule') + '<span>The radar layer is not built yet.</span></li></ul>';
 
   var head = about.querySelector('.m3-vhead');
   about.insertBefore(card, head ? head.nextSibling : about.firstChild);
