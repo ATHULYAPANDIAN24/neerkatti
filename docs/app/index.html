@@ -26,6 +26,7 @@
 <!-- Leaflet 1.9.4 is served from this site (vendor/leaflet, BSD-2), so the map never waits on a CDN -->
 <link rel="stylesheet" href="vendor/leaflet/leaflet.css">
 <link rel="stylesheet" href="app.css">
+<link rel="stylesheet" href="final/final.css">
 <link rel="preload" href="data/photo_2018_light.webp" as="image" type="image/webp">
 <link rel="preload" href="data/photo_2026_light.webp" as="image" type="image/webp">
 </head>
@@ -322,5 +323,9 @@
 <script src="data/neerkatti_data.js"></script>
 <script src="core.js"></script>
 <script src="app.js"></script>
+<!-- final round (4–5 Nov): each feature in its own file, on with ?final=1 until it is stable -->
+<script src="final/common.js"></script>
+<script src="final/complaint.js"></script>
+<script src="final/alerts.js"></script>
 </body>
 </html>

@@ -1,0 +1,99 @@
+/* NEERKATTI final round: styles for the files in final/ (complaint letter, alerts, photo check).
+   Colours come from app.css; the letter itself is a white sheet in both themes, like paper. */
+
+/* ---- a sheet: a large dialog for one task ---------------------------------------- */
+.nk-sheet{border:0;padding:0;margin:auto;width:min(1100px,calc(100vw - 24px));max-height:calc(100dvh - 24px);border-radius:20px;background:var(--card);color:var(--ink);box-shadow:0 20px 60px rgba(0,0,0,.35);overflow:hidden}
+.nk-sheet[open]{display:flex;flex-direction:column}
+.nk-sheet::backdrop{background:rgba(14,20,34,.55)}
+.nk-sheet-top{display:flex;justify-content:space-between;align-items:flex-start;gap:16px;padding:18px 22px 14px;border-bottom:1px solid var(--line)}
+.nk-sheet-top h2{margin:0;font:800 21px/1.2 Inter,system-ui,sans-serif;letter-spacing:-.01em;outline:none}
+.nk-sheet-top .kicker{margin-bottom:4px}
+.nk-sub{margin:4px 0 0;font-size:13.5px;color:var(--muted)}
+.nk-x{flex:none;background:none;border:0;font-size:28px;line-height:1;color:var(--muted);cursor:pointer;padding:2px 8px;border-radius:8px}
+.nk-x:hover{color:var(--ink);background:var(--tint)}
+.nk-sheet-body{display:grid;grid-template-columns:340px minmax(0,1fr);flex:1;min-height:0}
+
+/* the form on the left */
+.nk-form{display:flex;flex-direction:column;gap:14px;padding:18px 22px 22px;overflow:auto;border-right:1px solid var(--line)}
+.nk-field{display:flex;flex-direction:column;gap:6px;margin:0}
+.nk-flbl{font:700 12.5px/1.3 Inter,system-ui,sans-serif;color:var(--ink)}
+.nk-flbl i{font-style:normal;font-weight:500;color:var(--muted)}
+.nk-form input,.nk-form select,.nk-form textarea{width:100%;font:400 14.5px/1.4 Inter,system-ui,sans-serif;padding:9px 11px;border:1px solid var(--line);border-radius:10px;background:var(--bg);color:var(--ink)}
+.nk-form textarea{resize:vertical}
+.nk-form input:focus-visible,.nk-form select:focus-visible,.nk-form textarea:focus-visible{outline:3px solid var(--orange);outline-offset:1px}
+.nk-form .seg{align-self:flex-start}
+.nk-btns{display:flex;flex-wrap:wrap;gap:8px}
+.nk-note{margin:0;font-size:12.5px;line-height:1.45;color:var(--muted)}
+.nk-status{margin:0;min-height:1.2em;font-size:13px;font-weight:600;color:var(--now-ink)}
+
+/* the preview on the right: pages of paper */
+.nk-preview{overflow:auto;padding:22px;background:var(--map-bg)}
+.nk-page{max-width:740px;margin:0 auto 22px;padding:46px 52px;background:#fff;color:#1B2333;box-shadow:0 1px 3px rgba(0,0,0,.12),0 12px 32px rgba(0,0,0,.14);font:400 14.5px/1.6 Inter,"Noto Sans Tamil","Nirmala UI",Latha,system-ui,sans-serif}
+.nk-page[lang="ta"]{font-family:"Noto Sans Tamil","Nirmala UI",Latha,"Tamil Sangam MN",Inter,system-ui,sans-serif;font-size:14px;line-height:1.75}
+.nk-page p{margin:0 0 12px}
+.nk-date{text-align:right}
+.nk-addrs{display:grid;grid-template-columns:1fr 1fr;gap:24px;margin:8px 0 18px}
+.nk-lbl{margin:0 0 2px!important;font-size:11.5px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#566074}
+.nk-page[lang="ta"] .nk-lbl{letter-spacing:0;text-transform:none;font-size:13px}
+.nk-subj{padding:10px 12px;border-left:3px solid #253C6D;background:#F3F6FB}
+.nk-close{margin-top:18px!important}
+.nk-sign{display:inline-block;margin-top:26px;font-weight:600}
+.nk-fig{margin:22px 0 10px;break-inside:avoid}
+.nk-fig img{display:block;width:100%;height:auto;border-radius:4px}
+.nk-fig figcaption{margin-top:6px;font-size:12px;line-height:1.45;color:#566074}
+.nk-src{font-size:11.5px;line-height:1.5;color:#566074;word-break:break-word}
+
+@media (max-width:820px){
+  .nk-sheet{width:100vw;max-width:100vw;height:100dvh;max-height:100dvh;border-radius:0}
+  .nk-sheet-body{grid-template-columns:1fr;overflow:auto}
+  .nk-form{overflow:visible;border-right:0;border-bottom:1px solid var(--line)}
+  .nk-preview{overflow:visible;padding:12px}
+  .nk-page{padding:26px 22px;font-size:14px}
+  .nk-addrs{grid-template-columns:1fr;gap:10px}
+}
+
+/* ---- what the final round has built so far (panel and intro) --------------------- */
+.nk-phase{list-style:none;margin:7px 0 0;padding:0;font-size:13.5px;line-height:1.4}
+.nk-phase li{display:flex;gap:7px;align-items:baseline;margin-bottom:4px}
+.nk-phase .nk-mark{flex:none;width:16px;height:16px;border-radius:50%;display:inline-grid;place-items:center;font-size:10.5px;font-weight:800;transform:translateY(2px)}
+.nk-phase .nk-live .nk-mark{background:var(--now-bg);color:var(--now-ink)}
+.nk-phase .nk-soon{color:var(--muted)}
+.nk-phase .nk-soon .nk-mark{background:var(--tint);color:var(--muted)}
+.nk-phase a{color:var(--accent);font-weight:600}
+
+/* ---- alerts: the panel card, list rows, map pins --------------------------------- */
+.nk-alerts{border:1.5px solid var(--warn-line)}
+.nk-alerts h2{font-size:16px}
+.nk-alerts .kicker{margin-bottom:2px}
+.nk-alert-list{list-style:none;margin:6px 0 8px;padding:0;display:grid;gap:8px}
+.nk-alert-row{width:100%;display:grid;grid-template-columns:34px minmax(0,1fr) auto;gap:2px 12px;align-items:center;text-align:left;
+  background:var(--card);color:var(--ink);border:1.5px solid var(--line);border-radius:14px;padding:9px 12px;font:inherit;cursor:pointer;transition:border-color .15s}
+.nk-alert-row:hover{border-color:var(--orange)}
+.nk-alert-row:focus-visible{outline:3px solid var(--orange);outline-offset:2px}
+.nk-alert-row[aria-current="true"]{border-color:var(--orange);background:var(--warn-bg)}
+.nk-alert-id{grid-row:1/3;width:34px;height:26px;border-radius:8px;display:grid;place-items:center;background:var(--orange);color:#1B2333;font-weight:800;font-size:13px}
+.nk-alert-place{font-weight:700;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.nk-alert-ha{font-weight:800;font-variant-numeric:tabular-nums;white-space:nowrap}
+.nk-alert-meta{grid-column:2/4;display:flex;flex-wrap:wrap;gap:4px 8px;align-items:center;font-size:12.5px;color:var(--muted)}
+.pill.nk-where.inside,.pill.nk-where.zone{background:#DDF3EF;color:#0B6B60}
+.pill.nk-where.outside{background:var(--tint);color:var(--ink)}
+.nk-alerts-foot{margin:4px 0 2px}
+.nk-alerts-foot a{color:var(--accent);font-weight:600}
+.nk-alert-pin{background:none;border:0}
+.nk-alert-pin span{display:grid;place-items:center;width:30px;height:22px;border-radius:7px;background:var(--orange);color:#1B2333;border:2px solid #fff;font:800 11.5px/1 Inter,system-ui,sans-serif;box-shadow:0 1px 5px rgba(0,0,0,.45)}
+.nk-alert-tag{display:inline-block;padding:1px 7px;border-radius:6px;background:var(--orange);color:#1B2333;font-size:12px;font-weight:800;vertical-align:1px}
+@media (prefers-color-scheme:dark){
+  .pill.nk-where.inside,.pill.nk-where.zone{background:#123A35;color:#7EE0D2}
+}
+
+/* ---- printing the letter: only the letter, on A4 --------------------------------- */
+#nk-print{display:none}
+@page{size:A4;margin:16mm 18mm}
+@media print{
+  html.nk-printing body > *:not(#nk-print){display:none!important}
+  html.nk-printing #nk-print{display:block!important}
+  html.nk-printing body{background:#fff}
+  #nk-print .nk-page{max-width:none;margin:0;padding:0;box-shadow:none}
+  #nk-print .nk-page + .nk-page{break-before:page}
+  #nk-print .nk-subj{-webkit-print-color-adjust:exact;print-color-adjust:exact}
+}

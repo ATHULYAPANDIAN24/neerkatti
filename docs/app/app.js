@@ -1634,7 +1634,8 @@
     // {id, label, run(patch, api), when(patch) optional}: a button in every patch's card
     addPatchAction: function (action) {
       patchActions = patchActions.filter(function (a) { return a.id !== action.id; }).concat([action]);
-      if (selected && map.hasLayer(popup)) popup.setContent(popupHtml(selected.feature.properties));
+      // a card already drawn gets the button too, open or still waiting for the map to fly there
+      if (selected) popup.setContent(popupHtml(selected.feature.properties));
     },
     // 'select' (a patch's properties) or 'season' ('2018' …)
     on: function (name, fn) { if (listeners[name]) listeners[name].push(fn); }
