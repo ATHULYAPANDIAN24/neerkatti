@@ -506,6 +506,8 @@
     api.setInsets({ top: t, right: r, bottom: b, left: l });
     L.Popup.prototype.options.autoPanPaddingTopLeft = [l + 12, t + 8];
     L.Popup.prototype.options.autoPanPaddingBottomRight = [r + 12, b + 8];
+    // and no taller than that free part (its tip and frame take about 60 px): a long card scrolls instead
+    L.Popup.prototype.options.maxHeight = Math.max(160, mapWrap.offsetHeight - t - b - 60);
   }
   window.addEventListener('resize', function () { setStop(stop, true); layout(); });
   phone.addEventListener('change', function () {
@@ -604,7 +606,39 @@
     if (ready) sub.textContent = rows.length + ' possible new change' + (rows.length === 1 ? '' : 's') + ', each needing a ground check';
     nav.querySelector('[data-dest="alerts"]').setAttribute('aria-label', 'Alerts' + (ready ? ', ' + rows.length + ' new' : ''));
     sync();
+    buildIndex();   // the alerts arrive after the page: search learns them now
+    openWanted();
   }
+  // A link to one alert (#alert-A2, as the letter and the feed write it). app.js rewrites the address on
+  // load, before the alerts arrive, so the boot script in index.html keeps the hash; open it once they are in.
+  var wantAlert = (/^#alert-(A\d+)$/.exec(window.NKBootHash || '') || [])[1] || null;
+  function openWanted() {
+    if (!wantAlert || !alertsReady() || !F.showAlert) return;
+    var id = wantAlert;
+    wantAlert = null;
+    if (current !== 'alerts') show('alerts');
+    if (phone.matches) setStop('peek');
+    F.showAlert(id, true);
+  }
+  // the address follows an open alert, so it can be shared, and goes back to the map's own when it closes
+  function alertOf(popup) {
+    var el = popup.getElement(), b = el && el.querySelector('.nk-alert-pop .nk-act[data-id]');
+    return b ? b.dataset.id : null;
+  }
+  map.on('popupopen', function (e) {
+    var id = alertOf(e.popup);
+    if (id) history.replaceState(history.state, '', location.pathname + location.search + '#alert-' + id);
+  });
+  // on a phone a map card is as wide as the screen: the buttons over the map step aside while one is open
+  var openCards = 0;
+  map.on('popupopen', function () { openCards++; html.classList.add('m3-card-open'); });
+  map.on('popupclose', function () { openCards = Math.max(0, openCards - 1); html.classList.toggle('m3-card-open', openCards > 0); });
+  map.on('popupclose', function (e) {
+    if (!alertOf(e.popup) || !/^#alert-/.test(location.hash)) return;
+    var v = api.state();
+    history.replaceState(history.state, '', location.pathname + location.search +
+      core.hashFor({ patch: v.patch, year: v.mode === 'single' ? v.year : 'compare', left: v.left, right: v.right, layer: v.layer, marsh: v.marsh }));
+  });
   if (alertCard) new MutationObserver(syncAlerts).observe(alertCard, { attributes: true, attributeFilter: ['hidden'], childList: true, subtree: true });
   if (alertCard) alertCard.addEventListener('click', function (e) {
     if (!e.target.closest('.nk-alert-row')) return;
@@ -780,9 +814,10 @@
       index.push({ kind: 'place', icon: 'location_on', title: pl.name, sub: 'Place on the map', keys: pl.name.toLowerCase(), lat: pl.lat, lon: pl.lon });
     });
     alertRows().forEach(function (r) {
-      var place = r.querySelector('.nk-alert-place'), ha = r.querySelector('.nk-alert-ha');
-      index.push({ kind: 'alert', icon: 'notifications', title: 'Alert ' + r.dataset.id + ' · ' + (place ? place.textContent : ''), sub: (ha ? ha.textContent + ' · ' : '') + 'possible new change',
-        keys: ('alert ' + r.dataset.id + ' ' + (place ? place.textContent : '')).toLowerCase(), id: r.dataset.id });
+      var place = r.querySelector('.nk-alert-place'), ha = r.querySelector('.nk-alert-ha'), eye = r.querySelector('.nk-alert-eye');
+      index.push({ kind: 'alert', icon: 'notifications', title: 'Alert ' + r.dataset.id + ' · ' + (place ? place.textContent : ''),
+        sub: (ha ? ha.textContent + ' · ' : '') + (eye ? eye.textContent + ' · ' : '') + 'possible change, needs a ground check',
+        keys: ('alert ' + r.dataset.id + ' ' + (place ? place.textContent : '') + ' ' + (eye ? eye.textContent : '')).toLowerCase(), id: r.dataset.id });
     });
   }
   var hits = [], active = -1;
@@ -836,6 +871,7 @@
     q.blur();
     if (x.kind === 'patch') api.pick(x.rank);
     else if (x.kind === 'alert') {
+      if (current !== 'alerts') show('alerts');
       if (phone.matches) setStop('peek');
       if (F.showAlert) F.showAlert(x.id, true);
     } else if (x.kind === 'place') {
@@ -934,7 +970,7 @@
   var legendBtn = legendEl && legendEl.querySelector('.legend-btn');
   if (legendBtn && legendBtn.getAttribute('aria-expanded') === 'true' && api.state().layer !== 'labels') legendBtn.click();
   buildIndex();
-  var first = new URLSearchParams(location.search).get('view');
+  var first = wantAlert ? 'alerts' : new URLSearchParams(location.search).get('view');
   show(first && views[first] && !isSub(first) && first !== 'details' ? first : 'explore');
   setStop('peek', true);
   tourWatch();

@@ -640,6 +640,7 @@ html.nk-m3 .nk-status{color:var(--md-primary)}
   .m3-fabs{right:12px;bottom:calc(var(--in-b) + 4px)}
   html.nk-m3 .map-hint{left:12px;transform:none;max-width:calc(100% - 84px)}
   html.nk-m3.m3-snack .m3-fabs{transform:translateY(calc(-1 * var(--snack-h,0px)))}
+  html.nk-m3.m3-card-open .m3-fabs{opacity:0;visibility:hidden;transition:opacity .15s,visibility 0s .15s}
   html.nk-m3 .toast{left:12px;right:12px;transform:none;max-width:none;animation-name:m3-snack-up}
   .m3-zoom{display:none}
   html.nk-m3.m3-tall .m3-timeline,html.nk-m3.m3-tall .m3-fabs,html.nk-m3.m3-tour .m3-timeline,html.nk-m3.m3-tour .m3-fabs{opacity:0;visibility:hidden;transform:translateY(16px);transition:opacity .15s,transform .15s,visibility 0s .15s}
