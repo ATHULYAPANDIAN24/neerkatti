@@ -76,7 +76,7 @@ own model. None of them answers the feedback, and every one adds risk the night 
 | 3 | **Every number from the data** | 1 number typed into code | 0 (commit `47c0b85`, live) | search + 62 tests |
 | 4 | **Claims match the data** | "5 real", "inference in the browser" | "5 possible: 3 show change, 2 unclear"; "labels read in the browser" | by-eye notes in `alerts.json` |
 | 5 | **Phone-first interface** | the earlier layout | Map-first Material 3 layout: 5 sections, links to one alert, search over alerts | works at 360 px wide |
-| 6 | **Fast and offline** | n/a | The app and every season's images saved for offline; demo video costs 0 bytes until played; our JavaScript about 70 KB over the wire | checked live, 5 Nov |
+| 6 | **Fast and offline** | n/a | The app and every season's images saved for offline; demo video costs 0 bytes until played; our JavaScript about 73 KB over the wire | checked live, 5 Nov |
 | 7 | **New in the final: alerts and letters** | n/a | 26 raw detections → **5 alerts** after 3 noise filters (81% rejected); complaint letter in **Tamil and English** to the right authority; RSS feed | live |
 | 8 | **AI dependency future-proofed** | Gemini 2.5 Flash (Google switches it off 1 Dec 2026) | **Gemini 2.5 Flash-Lite**, not deprecated. We tried Gemini 3.8 Flash first, but on the night it answered 503 "high demand"; 2.5 Flash-Lite answered every test in about 3 s | Google's deprecations page, checked 5 Nov; commit `5260702` |
 | 9 | **Citizen photo check, live** | "Coming" | The phone shrinks the photo (which drops GPS) → our Cloudflare Worker (key as a secret, stores nothing, 8 checks a minute per visitor) → Gemini 2.5 Flash-Lite: construction, dumping, sewage, no change or unclear, in about 3 s | tested against the live Worker, 5 Nov |
@@ -102,9 +102,10 @@ downloads nothing until played, then plays all 46 s; after a reload the service 
 page; the plain link still shows the older layout on a fresh device; and we confirmed the fix was
 live by reading the deployed file after the build.
 
-**Photo check (5 Nov, against the live Worker):** a real photo came back in about 3 s with a correct
-answer (category, confidence, one sentence). Offline, the app says the photo check needs a
-connection instead of failing.
+**Photo check (5 Nov, against the live Worker):** the patch #1 close-up came back in 1.4 s and 1.8 s,
+with a correct answer (category, confidence, one sentence) from `gemini-2.5-flash-lite`. We say
+"about 3 seconds" to be safe. Offline, the app says the photo check needs a connection instead of
+failing.
 
 **Human checks:** the top 10 patches were checked by eye: **9 real, 1 unclear (#9)**. All 5 alerts
 were checked by eye: **3 show change (A2 and A3: water gone; A5: likely), 2 unclear (A1, A4)**. We
@@ -248,7 +249,7 @@ to see?"
 | **8 a minute** | photo checks allowed per visitor |
 | **30 days** | the office's deadline to answer an RTI application; then a first appeal |
 | **₹10** | the RTI fee in Tamil Nadu |
-| **70 KB** | our JavaScript over the wire (gzipped); Leaflet about 42 KB more |
+| **73 KB** | our JavaScript over the wire (gzipped); Leaflet about 42 KB more |
 | **₹0** | to run |
 | **24 Sep 2025 / 11 Nov 2026** | NGT 1 km order / next High Court hearing listed |
 | **8 Apr 2022** | Pallikaranai named a Ramsar site; it was ~5,500 ha in 1965, ~696 ha in 2021 |
