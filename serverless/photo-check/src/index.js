@@ -54,7 +54,7 @@ function tooMany(visitor) {
 }
 
 async function askModel(env, photo) {
-  const model = env.GEMINI_MODEL || 'gemini-2.5-flash';
+  const model = env.GEMINI_MODEL || 'gemini-3.8-flash';
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), 25_000);
   try {
@@ -105,7 +105,7 @@ export default {
       if (!res.ok) return reply({ error: `Model list refused (${res.status}).` }, 502, cors);
       const data = await res.json();
       const names = (data.models || []).filter((m) => (m.supportedGenerationMethods || []).includes('generateContent')).map((m) => m.name.replace('models/', ''));
-      return reply({ models: names, using: env.GEMINI_MODEL || 'gemini-2.5-flash' }, 200, cors);
+      return reply({ models: names, using: env.GEMINI_MODEL || 'gemini-3.8-flash' }, 200, cors);
     }
     if (request.method === 'GET' && url.pathname === '/') return reply({ service: 'NEERKATTI photo check', ok: !!env.GEMINI_API_KEY }, 200, cors);
     if (request.method !== 'POST' || url.pathname !== '/check') return reply({ error: 'Not found.' }, 404, cors);
