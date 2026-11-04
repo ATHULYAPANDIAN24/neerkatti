@@ -179,10 +179,28 @@ for f in found:
 alerts.sort(key=lambda a: (ORDER[a["marsh"]], -a["area_ha"]))
 alerts = alerts[:MAX_ALERTS]
 
+# Place names from OpenStreetMap (zone or village); if Nominatim cannot be reached (a venue's
+# Wi-Fi, say), the zone or village of the nearest flagged patch, which is usually the same.
+patches = json.loads((DATA / "patches.geojson").read_text())["features"]
+
+
+def nearest_area(lon, lat):
+    best = min(patches, key=lambda f: (f["properties"]["lon"] - lon) ** 2 + (f["properties"]["lat"] - lat) ** 2)
+    return best["properties"].get("admin_area")
+
+
 cache = load_cache()
+online = os.environ.get("NO_NOMINATIM") != "1"
 for i, a in enumerate(alerts, 1):
     a["id"] = f"A{i}"
-    a["place"] = area_name(a["lon"], a["lat"], cache) or "Pallikaranai watershed"
+    a["place"] = None
+    if online:
+        try:
+            a["place"] = area_name(a["lon"], a["lat"], cache)
+        except OSError as e:
+            print("place lookup failed, using the nearest patch's area from now on:", e)
+            online = False
+    a["place"] = a["place"] or nearest_area(a["lon"], a["lat"]) or "Pallikaranai watershed"
 save_cache(cache)
 
 

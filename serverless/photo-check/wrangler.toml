@@ -1,0 +1,8 @@
+# NEERKATTI photo check: a Cloudflare Worker (free plan) that holds the Gemini API key.
+# Deploy:  npx wrangler login, npx wrangler secret put GEMINI_API_KEY, npx wrangler deploy
+name = "neerkatti-photo-check"
+main = "src/index.js"
+compatibility_date = "2026-10-01"
+
+[vars]
+GEMINI_MODEL = "gemini-2.5-flash"

@@ -161,7 +161,9 @@
     if (!r.ok) throw new Error(r.status);
     return r.json();
   }).then(draw).catch(function () {
-    document.getElementById('nk-alerts-lead').textContent = 'The alert list could not be loaded. Check the connection and reload the page.';
+    // no alert list yet (or no connection): leave the card and the switch out rather than show an empty promise
+    card.hidden = true;
+    toggle.hidden = true;
   });
   F.showAlert = show;
   F.live('alerts');
