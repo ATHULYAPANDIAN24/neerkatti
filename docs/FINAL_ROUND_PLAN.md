@@ -1,5 +1,7 @@
 # NEERKATTI: the 24-hour final round plan
 
+> **Status on 5 Nov 2026:** built and live at [`/app/?final=1`](https://athulyapandian24.github.io/neerkatti/app/?final=1): the alerts (P0), the complaint letter in Tamil and English with an RTI follow-up (P0), and the citizen photo check on Gemini 2.5 Flash-Lite through our Cloudflare Worker (P1). Not built: Sentinel-1 radar (P2). The plan below is kept as we wrote it before the final.
+
 DEXATHON 2026 final: **Wed 4 Nov 10:30 → Thu 5 Nov 10:30**, Sathyabama (Dr. Remibai Jeppiaar Auditorium, Hall 01). Team Sternritters (DEX26302), four people.
 
 The rules say *major feature development and integration must take place within the 24-hour window*. So the four final-round features below are **not in the Round 2 code**. Round 2 only leaves clean places to plug them in (see [Extension points](#extension-points-already-in-the-round-2-code)).
