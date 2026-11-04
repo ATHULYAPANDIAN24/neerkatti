@@ -26,18 +26,24 @@
     { t: 'Your phone', s: ['plain JS + Leaflet · offline after one visit'], who: 'ours', ours: 1 },
     { t: 'Complaint letter', s: ['English or Tamil, to the office that can act'], who: 'ours', ours: 1 }
   ];
-  var y = 22, parts = [], prevBottom = null;
+  var y = 22, parts = [], prevBottom = null, cutY = null;
   parts.push('<text class="nk-a-band" x="' + X + '" y="14">ONCE, IN THE CLOUD</text>');
   nodes.forEach(function (d) {
     if (d.cut) {
       y += 14;
       parts.push('<line class="nk-a-cut" x1="0" x2="' + W + '" y1="' + (y - 8) + '" y2="' + (y - 8) + '"/>' +
         '<text class="nk-a-band" x="' + X + '" y="' + (y + 8) + '">ON THE PHONE · NO SERVER · NO API KEY</text>');
-      y += 18;
+      cutY = y - 8;
+      y += 30;
     }
     var h = 32 + 16 * d.s.length;
     if (prevBottom != null) {
       var mx = W / 2;
+      // across the cut, the arrow stops at the line and starts again under its label
+      if (cutY != null && d.cut) {
+        parts.push('<line class="nk-a-arrow" x1="' + mx + '" x2="' + mx + '" y1="' + (prevBottom + 2) + '" y2="' + (cutY - 3) + '"/>');
+        prevBottom = cutY + 18;
+      }
       parts.push('<line class="nk-a-arrow" x1="' + mx + '" x2="' + mx + '" y1="' + (prevBottom + 2) + '" y2="' + (y - 7) + '"/>' +
         '<path class="nk-a-head" d="M' + (mx - 5) + ' ' + (y - 8) + 'h10l-5 7z"/>');
     }
