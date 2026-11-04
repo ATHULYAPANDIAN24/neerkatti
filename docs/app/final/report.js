@@ -15,7 +15,7 @@
     construction: 'Construction', dumping: 'Dumping or filling', sewage: 'Sewage',
     no_change: 'No sign of filling', unclear: 'Unclear'
   };
-  var site = null, here = null, busy = false;
+  var site = null, here = null, busy = false, ctl = null, ask = 0;
 
   var sheet = document.createElement('dialog');
   sheet.className = 'nk-sheet';
@@ -25,7 +25,7 @@
     '<div class="nk-sheet-top"><div><p class="kicker">Final round · ground check</p><h2 id="nk-photo-title" tabindex="-1">Check a photo</h2><p class="nk-sub" id="nk-photo-sub"></p></div>' +
     '<button type="button" class="nk-x" id="nk-photo-x" aria-label="Close the photo check">×</button></div>' +
     '<div class="nk-sheet-body"><div class="nk-form">' +
-    '<p class="nk-note">Your photo is sent to Google\'s Gemini model to be read. NEERKATTI keeps nothing. Please leave people out of the photo.</p>' +
+    '<p class="nk-note">Your photo is sent to Google\'s Gemini AI to be read. NEERKATTI keeps nothing, but on its free tier Google may keep photos to improve its AI, so please leave people out of the photo.</p>' +
     '<div class="nk-btns"><button type="button" class="btn primary" id="nk-photo-pick">Take or choose a photo</button>' +
     '<button type="button" class="btn ghost" id="nk-photo-here">Add where I am</button></div>' +
     '<input type="file" id="nk-photo-file" accept="image/*" hidden>' +
@@ -68,27 +68,49 @@
       '. Possible change, needs a ground check.</p>';
   }
 
+  // The Worker's own refusals are plain words; Google's (busy, over quota) come as status codes
+  function plain(status, msg) {
+    if (status === 429) return 'Too many photo checks just now. Wait a minute and try again.';
+    if (status >= 500 || !msg) return 'The AI did not answer this time. Try again in a minute. The map and the letter still work.';
+    return msg;
+  }
+
+  // Closing the sheet or opening it for another site drops a check still on its way
+  function stop() {
+    ask++;
+    if (ctl) ctl.abort();
+    ctl = null;
+    busy = false;
+  }
+
   function send(dataUrl) {
     if (!navigator.onLine) { say('The photo check needs a connection. The map and the letter work offline.'); return; }
+    var mine = ++ask;
     busy = true;
     say('Checking the photo…');
     $('nk-photo-out').innerHTML = '<figure class="nk-fig"><img src="' + dataUrl + '" alt="The photo you sent"></figure>';
-    var ctl = window.AbortController ? new AbortController() : null;
-    var timer = setTimeout(function () { if (ctl) ctl.abort(); }, 30000);
+    ctl = window.AbortController ? new AbortController() : null;
+    var abort = ctl, late = false;
+    var timer = setTimeout(function () { late = true; if (abort) abort.abort(); }, 30000);
     fetch(PHOTO_URL.replace(/\/$/, '') + '/check', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ photo: dataUrl.split(',')[1], lat: here ? here.lat : undefined, lon: here ? here.lon : undefined, site: { lat: site.lat, lon: site.lon } }),
-      signal: ctl ? ctl.signal : undefined
+      signal: abort ? abort.signal : undefined
     }).then(function (r) {
-      return r.json().then(function (j) { return { ok: r.ok, j: j }; }, function () { return { ok: false, j: {} }; });
+      return r.json().then(function (j) { return { ok: r.ok, status: r.status, j: j }; }, function () { return { ok: false, status: r.status, j: {} }; });
     }).then(function (x) {
-      if (!x.ok || x.j.error) { say(x.j.error || 'The photo check did not answer. Try again.'); return; }
-      say('');
+      if (mine !== ask) return;
+      if (!x.ok || x.j.error) { say(plain(x.status, x.j.error)); return; }
       show(x.j, dataUrl);
+      say('Answer below: ' + (WORDS[x.j.category] || 'Unclear') + '.');
     }).catch(function (e) {
-      say(e && e.name === 'AbortError' ? 'The photo check took too long. Try again.' : 'Could not reach the photo check. Try again.');
-    }).then(function () { clearTimeout(timer); busy = false; });
+      if (mine !== ask) return;
+      say(late ? 'The photo check took too long. Try again.' : 'Could not reach the photo check. Check the connection and try again.');
+    }).then(function () {
+      clearTimeout(timer);
+      if (mine === ask) { busy = false; ctl = null; }
+    });
   }
 
   $('nk-photo-pick').addEventListener('click', function () { if (!busy) $('nk-photo-file').click(); });
@@ -106,6 +128,7 @@
     }, function () { say('Location not shared. The check works without it.'); }, { enableHighAccuracy: true, timeout: 15000 });
   });
   $('nk-photo-x').addEventListener('click', function () { sheet.close(); });
+  sheet.addEventListener('close', stop);
   sheet.addEventListener('click', function (e) {
     if (e.target !== sheet) return;
     var r = sheet.getBoundingClientRect();
@@ -114,9 +137,10 @@
 
   // Called by the patch card, the Act page and the alert cards (they look for F.report)
   F.report = function (s) {
+    stop();
     site = s;
     here = null;
-    $('nk-photo-sub').textContent = [s.label, s.place].filter(Boolean).join(' · ');
+    $('nk-photo-sub').textContent = (s.kind === 'alert' ? 'Alert ' + s.id : 'Patch #' + s.id) + (s.place ? ' · ' + s.place : '');
     $('nk-photo-out').innerHTML = '';
     $('nk-photo-file').value = '';
     say('');
