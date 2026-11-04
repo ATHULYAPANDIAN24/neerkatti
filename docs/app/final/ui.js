@@ -506,8 +506,8 @@
     api.setInsets({ top: t, right: r, bottom: b, left: l });
     L.Popup.prototype.options.autoPanPaddingTopLeft = [l + 12, t + 8];
     L.Popup.prototype.options.autoPanPaddingBottomRight = [r + 12, b + 8];
-    // and no taller than that free part (its tip and frame take about 60 px): a long card scrolls instead
-    L.Popup.prototype.options.maxHeight = Math.max(160, mapWrap.offsetHeight - t - b - 60);
+    // and no taller than that free part (its tip, frame and the padding take about 80 px): a long card scrolls
+    L.Popup.prototype.options.maxHeight = Math.max(160, mapWrap.offsetHeight - t - b - 80);
   }
   window.addEventListener('resize', function () { setStop(stop, true); layout(); });
   phone.addEventListener('change', function () {
@@ -618,7 +618,8 @@
     wantAlert = null;
     if (current !== 'alerts') show('alerts');
     if (phone.matches) setStop('peek');
-    F.showAlert(id, true);
+    // alerts.js opens the card on the next 'moveend': let the map settle first, so that is its own flight's
+    setTimeout(function () { F.showAlert(id, true); }, 300);
   }
   // the address follows an open alert, so it can be shared, and goes back to the map's own when it closes
   function alertOf(popup) {
@@ -627,7 +628,14 @@
   }
   map.on('popupopen', function (e) {
     var id = alertOf(e.popup);
-    if (id) history.replaceState(history.state, '', location.pathname + location.search + '#alert-' + id);
+    if (!id) return;
+    history.replaceState(history.state, '', location.pathname + location.search + '#alert-' + id);
+    hideHint();
+    // if the card opened before its flight landed, slide it into view once the map is still (not after a drag)
+    var t0 = Date.now();
+    map.once('moveend', function () {
+      if (Date.now() - t0 < 2000 && map.hasLayer(e.popup) && !(map.dragging && map.dragging.moved())) e.popup.update();
+    });
   });
   // on a phone a map card is as wide as the screen: the buttons over the map step aside while one is open
   var openCards = 0;

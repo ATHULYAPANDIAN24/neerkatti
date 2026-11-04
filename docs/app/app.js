@@ -337,7 +337,7 @@
     if (!size.x || !size.y) { map.setView(box.getCenter(), 12); return; }
     fitted = true;
     if (animate) map.flyToBounds(box, L.extend(pads(8), { duration: 0.8 }));
-    else map.fitBounds(box, pads(8));
+    else map.fitBounds(box, L.extend(pads(8), { animate: false }));   // no zoom animation, so no late 'moveend' either
   }
   // Leaflet's fit padding: `px` all round, plus whatever the floating panels cover
   function pads(px) {
