@@ -80,7 +80,7 @@
     '<button type="button" class="m3-icon-btn" id="m3-q-clear" aria-label="Clear the search" hidden>' + icon('close', '×') + '</button>' +
     '<button type="button" class="m3-icon-btn" id="m3-q-about" aria-label="About NEERKATTI">' + icon('info', 'i') + '</button></div>' +
     '<div class="m3-results" id="m3-results" role="listbox" aria-label="Suggestions" hidden></div>';
-  app.appendChild(search);
+  app.insertBefore(search, mapWrap);   // reading order: navigation, search, the panel, then the map
   var q = $('m3-q'), results = $('m3-results');
 
   // ---- the sheet: #panel holds every view ----------------------------------------------------
@@ -95,7 +95,8 @@
   var fold = make('button', 'm3-fold', icon('chevron_left', '‹'));
   fold.type = 'button';
   fold.setAttribute('aria-label', 'Hide the side panel');
-  app.appendChild(fold);
+  app.insertBefore(panel, mapWrap);
+  app.insertBefore(fold, mapWrap);
 
   var views = {};
   function addView(id, label) {
@@ -239,6 +240,9 @@
     });
   });
   panel.querySelectorAll('details.about').forEach(function (d) { if (!ab.contains(d)) ab.appendChild(d); });
+  var TITLES = { 'How a patch gets flagged': 'Method: how a patch gets flagged', 'How far to trust it': 'Accuracy and limits',
+    'Cost and data': 'Data, cost and licences' };
+  ab.querySelectorAll('details.about > summary').forEach(function (s) { var t = TITLES[s.textContent.trim()]; if (t) s.textContent = t; });
   var phase = pick('.phase');
   if (phase) ab.appendChild(phase);
   var abBtns = make('p', 'm3-cta');
@@ -270,7 +274,8 @@
     return '<button type="button" class="m3-chip" data-chip="' + c.id + '" aria-pressed="false">' +
       (c.swatch ? '<span class="m3-swatch" style="background:' + c.swatch + '" aria-hidden="true"></span>' : icon(c.icon, '', 'fill-on')) + c.label + '</button>';
   }).join('');
-  mapWrap.appendChild(chips);
+  var mapEl = $('map');
+  mapWrap.insertBefore(chips, mapEl);   // the map's own controls come before its fifteen pins
 
   var layers = make('div', 'm3-layers');
   layers.innerHTML = '<button type="button" class="m3-square" id="m3-layers-btn" aria-expanded="false" aria-controls="m3-layers-pop" aria-label="Map type and details">' + icon('layers', '≡') + '</button>' +
@@ -279,7 +284,7 @@
   pop.appendChild(viewSeg);
   pop.insertAdjacentHTML('beforeend', '<p class="m3-pop-h">Map details</p>');
   if (namesChk) pop.appendChild(namesChk);
-  mapWrap.appendChild(layers);
+  mapWrap.insertBefore(layers, mapEl);
   var layersBtn = $('m3-layers-btn');
 
   var timeline = make('div', 'm3-timeline');
@@ -290,7 +295,7 @@
   if (yearsLbl) yearsLbl.innerHTML = '<b class="msr m3-seg-ic" aria-hidden="true">calendar_month</b><b class="m3-seg-t">Year by year</b>';
   timeline.appendChild(modeSeg);
   timeline.appendChild(timebar);
-  mapWrap.appendChild(timeline);
+  mapWrap.insertBefore(timeline, mapEl);
 
   var fabs = make('div', 'm3-fabs');
   if (legendEl) fabs.appendChild(legendEl);
@@ -301,7 +306,7 @@
   var zoom = make('div', 'm3-zoom', '<button type="button" id="m3-zoom-in" aria-label="Zoom in">' + icon('add', '+') + '</button>' +
     '<button type="button" id="m3-zoom-out" aria-label="Zoom out">' + icon('remove', '−') + '</button>');
   fabs.appendChild(zoom);
-  mapWrap.appendChild(fabs);
+  mapWrap.insertBefore(fabs, mapEl);
   L.DomEvent.disableClickPropagation(fabs);
   L.DomEvent.disableScrollPropagation(fabs);
   $('m3-zoom-in').addEventListener('click', function () { map.zoomIn(); });
@@ -316,6 +321,7 @@
     var was = current;
     current = id;
     Object.keys(views).forEach(function (k) { views[k].hidden = k !== id; });
+    html.classList.toggle('m3-details', id === 'details');
     var v = views[id];
     if (was !== id && booted) {
       v.classList.remove('m3-view-in');
@@ -459,11 +465,15 @@
   panel.addEventListener('pointercancel', endDrag);
 
   function setCollapsed(on) {
+    var before = parseFloat(html.style.getPropertyValue('--in-l')) || 0;
     collapsed = on;
     html.classList.toggle('m3-collapsed', on);
     fold.setAttribute('aria-label', on ? 'Show the side panel' : 'Hide the side panel');
     fold.setAttribute('aria-expanded', String(!on));
     layout();
+    // the map slides with the free part, so what was in its middle (and under the divider) stays there
+    var after = parseFloat(html.style.getPropertyValue('--in-l')) || 0;
+    if (before !== after) map.panBy([(before - after) / 2, 0], { duration: 0.35 });
   }
   fold.addEventListener('click', function () { setCollapsed(!collapsed); });
 
