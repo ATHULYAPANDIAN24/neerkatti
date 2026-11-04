@@ -35,6 +35,7 @@ DEXATHON 2026 · Sustainability Development track · Software · Team Sternritte
 | 3 | **Ask the AI about any spot.** Tap anywhere on the map, flagged or not: the label the AI gave that 10 m square in every season, and what the rule makes of it. | [`/app/#layer=labels`](https://athulyapandian24.github.io/neerkatti/app/?intro=0#layer=labels) |
 | 4 | **Check the marsh.** 28 of 36 patches lie in the protected marsh or within 1 km of it. | [`/app/#marsh=1`](https://athulyapandian24.github.io/neerkatti/app/?intro=0#marsh=1) |
 | 5 | **Take the data.** Every patch with every season's shares, as a spreadsheet. | [`patches.csv`](docs/app/data/patches.csv) |
+| 6 | **See what the final added.** The alerts; *Act → Write the letter* for the complaint or the RTI follow-up, in Tamil or English; *Report what you see* to check a photo (needs a connection); *About → How it works*. | [`/app/?final=1`](https://athulyapandian24.github.io/neerkatti/app/?final=1) |
 
 It runs in any browser, on a phone too, and keeps working offline once opened.
 
