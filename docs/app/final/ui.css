@@ -689,6 +689,10 @@ html.nk-m3 .nk-status{color:var(--md-primary)}
 .nk-arch-key .k{width:14px;height:14px;border-radius:4px;background:var(--md-surface-container-highest);border:1px solid var(--md-outline-variant);margin-left:8px}
 .nk-arch-key .k.ours{background:var(--md-primary-container);border-color:transparent;margin-left:0}
 .nk-arch-sub{margin:16px 0 0;font:500 14px/20px var(--md-font);color:var(--md-on-surface)}
+.nk-faq dl{margin:0 16px 16px}
+.nk-faq dt{margin-top:12px;font:500 14px/20px var(--md-font);color:var(--md-on-surface)}
+.nk-faq dt:first-child{margin-top:0}
+.nk-faq dd{margin:2px 0 0;font:400 14px/20px var(--md-font);color:var(--md-on-surface-variant)}
 .nk-arch-fig:fullscreen{display:flex;flex-direction:column;justify-content:center;align-items:center;padding:16px;background:var(--md-surface)}
 .nk-arch-fig:fullscreen .nk-arch-svg{max-width:none;width:auto;height:calc(100vh - 64px)}
 /* Act: what happens after the letter */

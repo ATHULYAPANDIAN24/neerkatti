@@ -116,6 +116,56 @@
     '<p class="small">This browser cannot play the video. <a href="final/media/demo.mp4">Download it (MP4)</a>.</p></video>';
   card.parentNode.insertBefore(vid, card.nextSibling);
 
+  // Questions people ask: short, plain answers, the first words answer the question. Numbers come
+  // from the data file, or from the page's own notes (accuracy, the check by eye), never typed here.
+  var text = document.body.textContent.replace(/\s+/g, ' ');
+  var eye = text.match(/top (\d+) by eye[^:]*: (\d+) show building, paving or filling, and (\d+) is unclear/) || [];
+  var first = meta.years[0], last = meta.years[1], since = meta.built_since_ha || {};
+  var recent = 0, worstYr = null;
+  Object.keys(since).forEach(function (yr) {
+    if (+yr >= last - 3) recent += since[yr];
+    if (worstYr == null || since[yr] > since[worstYr]) worstYr = yr;
+  });
+  var share = meta.wet_ha_before ? (100 * ha / meta.wet_ha_before).toFixed(1) : null;
+  var zone = meta.marsh && meta.marsh.zone_m ? (meta.marsh.zone_m >= 1000 ? meta.marsh.zone_m / 1000 + ' km' : meta.marsh.zone_m + ' m') : null;
+  var faq = [
+    ['Which AI does it use?',
+      'Two, both Google\'s. Dynamic World V1, by Google and WRI, labels every 10 m square as water, marsh, buildings and so on. ' +
+      'Gemini 2.5 Flash-Lite reads a citizen\'s photo. The change rule on top of them is ours.'],
+    ['How do you avoid false alarms?',
+      'A patch counts only if it was water or marsh in ' + first + ' and is built in both ' + (last - 1) + ' and ' + last +
+      ', because one season can be a mislabel. The lake rim and tiny specks are ignored. New alerts also drop a lake drying in summer, land already built, and a moving shoreline.'],
+    ['How accurate is it?',
+      (acc[1] ? 'Dynamic World is right about buildings ' + acc[1] + '% of the time (precision) but finds only ' + acc[2] +
+        '% of marsh (recall), so ' + ha + ' ha is a floor. ' : '') +
+      (eye[1] ? 'We checked the top ' + eye[1] + ' patches by eye: ' + eye[2] + ' show building, paving or filling, and ' + eye[3] + ' is unclear.' : '')],
+    [share ? 'It is only ' + share + '% of the ' + first + ' water and marsh. Why does it matter?' : 'Why does it matter?',
+      'Because it is speeding up: ' + Math.round(100 * recent / ha) + '% of it since ' + (last - 3) + ', and ' + worstYr +
+      ' lost the most of any season (' + since[worstYr] + ' ha). It is also a floor, because the AI misses marsh.'],
+    ['My complaint was ignored. What now?',
+      'Choose RTI follow-up in the letter: by law the office must reply within 30 days, and then comes a first appeal. ' +
+      'The evidence is public and dated, so it can also go to NGOs, the press or a lawyer.'],
+    ['Does Google keep my photo?',
+      'It may. NEERKATTI stores nothing, and your phone removes the photo\'s location before sending it. ' +
+      'On its free tier Google may keep photos to improve its AI, so leave people out of the photo.'],
+    ['Why does the photo check call Google from North America?',
+      'Gemini refused our Worker\'s Singapore location ("User location is not supported"), so the Worker calls from eastern North America. It still stores nothing.'],
+    ['Could this be used against someone?',
+      'It never names an owner or says who is at fault. Every patch is a possible change that needs a ground check, from satellite data that is already free and public.'],
+    ['What if the AI is wrong about a plot?',
+      'Then an inspection shows it. The letter asks only for an inspection and accuses no one, so a wrong patch costs one visit.'],
+    [zone ? 'If the court changes the ' + zone + ' rule, is this still useful?' : 'If the court changes the rules, is this still useful?',
+      'Yes. Whatever the court decides, the map still shows what changed, and the letter\'s request for an inspection still stands.'],
+    ['Why not an app-store app?',
+      'It installs from the browser to your home screen and works offline after one visit, so no app store is needed.']
+  ];
+  var qa = document.createElement('details');
+  qa.className = 'about nk-faq';
+  qa.innerHTML = '<summary>Questions people ask</summary><dl>' + faq.filter(function (f) { return f[1]; }).map(function (f) {
+    return '<dt>' + esc(f[0]) + '</dt><dd>' + esc(f[1]) + '</dd>';
+  }).join('') + '</dl>';
+  vid.parentNode.insertBefore(qa, vid.nextSibling);
+
   // full screen, for a projector: the figure alone, as large as the screen allows
   var fig = card.querySelector('.nk-arch-fig'), full = card.querySelector('.nk-arch-full');
   if (!fig.requestFullscreen) full.hidden = true;
